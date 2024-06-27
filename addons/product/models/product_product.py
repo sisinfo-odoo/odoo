@@ -166,8 +166,9 @@ class ProductProduct(models.Model):
 
         There could be no variant for a combination if using dynamic attributes.
         """
-        self.env.cr.execute("CREATE UNIQUE INDEX IF NOT EXISTS product_product_combination_unique ON %s (product_tmpl_id, combination_indices) WHERE active is true"
-            % self._table)
+        # self.env.cr.execute("CREATE UNIQUE INDEX IF NOT EXISTS product_product_combination_unique ON %s (product_tmpl_id, combination_indices) WHERE active is true"
+        #     % self._table)
+        a = 1
 
     @api.constrains('barcode')
     def _check_barcode_uniqueness(self):
