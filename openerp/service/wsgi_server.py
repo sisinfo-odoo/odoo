@@ -25,6 +25,8 @@ import werkzeug.contrib.fixers
 
 import openerp
 import openerp.tools.config as config
+import ctypes
+from ctypes import py_object
 
 _logger = logging.getLogger(__name__)
 
@@ -65,7 +67,7 @@ def xmlrpc_return(start_response, service, method, params, string_faultcode=Fals
 
 def xmlrpc_handle_exception_int(e):
     if isinstance(e, openerp.exceptions.UserError):
-        fault = xmlrpclib.Fault(RPC_FAULT_CODE_WARNING, openerp.tools.ustr(e.name))
+        fault = xmlrpclib.Fault(RPC_FAULT_CODE_WARNING, openerp.tools.ustr(e.value))
         response = xmlrpclib.dumps(fault, allow_none=False, encoding=None)
     elif isinstance(e, openerp.exceptions.RedirectWarning):
         fault = xmlrpclib.Fault(RPC_FAULT_CODE_WARNING, str(e))
@@ -152,6 +154,9 @@ def wsgi_xmlrpc(environ, start_response):
         params, method = xmlrpclib.loads(data)
         return xmlrpc_return(start_response, service, method, params, string_faultcode)
 
+# WSGI handlers registered through the register_wsgi_handler() function below.
+module_handlers = []
+
 def application_unproxied(environ, start_response):
     """ WSGI entry point."""
     # cleanup db/uid trackers - they're set at HTTP dispatch in
@@ -166,11 +171,29 @@ def application_unproxied(environ, start_response):
 
     with openerp.api.Environment.manage():
         # Try all handlers until one returns some result (i.e. not None).
-        for handler in [wsgi_xmlrpc, openerp.http.root]:
-            result = handler(environ, start_response)
-            if result is None:
-                continue
-            return result
+
+        while True:
+            wsgi_handlers = [wsgi_xmlrpc]
+            if not (openerp.http.root in module_handlers):
+                module_handlers.append(openerp.http.root)
+            wsgi_handlers += module_handlers
+            old_handlers = module_handlers[:]
+            for handler in wsgi_handlers:
+                print environ["PATH_INFO"]
+                #if not ('/Finanzas/odoo/' in environ["PATH_INFO"] and handler==openerp.http.root):
+                result = handler(environ, start_response)
+                print start_response.func_closure[1].cell_contents
+                if result is None:
+                    continue
+                if old_handlers == module_handlers:
+                #if old_handlers == module_handlers or '/Finanzas/odoo/' not in environ["PATH_INFO"]:
+                        return result
+                #start_response.func_closure[1].cell_contents = []
+            if old_handlers==module_handlers:
+                break
+            else:
+                if len(start_response.func_closure[1].cell_contents) > 0:
+                    ctypes.pythonapi.PyCell_Set(py_object(start_response.func_closure[1]), py_object([]))
 
     # We never returned from the loop.
     response = 'No handler found.\n'
