@@ -3482,6 +3482,13 @@ class AccountMoveLine(models.Model):
         if partner:
             values.append(partner.display_name)
         values.append(format_date(self.env, fields.Date.to_string(date)))
+
+        values_tmp = []
+        for rec in values:
+            if rec:
+                values_tmp.append(rec)
+        values = values_tmp if values_tmp else ['Sin valores']
+
         return ' - '.join(values)
 
     @api.model
