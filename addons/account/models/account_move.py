@@ -3426,11 +3426,11 @@ class AccountMoveLine(models.Model):
             'CHECK(credit + debit>=0 AND credit * debit=0)',
             'Wrong credit or debit value in accounting entry !'
         ),
-        (
-            'check_accountable_required_fields',
-             "CHECK(COALESCE(display_type IN ('line_section', 'line_note'), 'f') OR account_id IS NOT NULL)",
-             "Missing required account on accountable invoice line."
-        ),
+        # (
+        #     'check_accountable_required_fields',
+        #      "CHECK(COALESCE(display_type IN ('line_section', 'line_note'), 'f') OR account_id IS NOT NULL)",
+        #      "Missing required account on accountable invoice line."
+        # ),
         (
             'check_non_accountable_fields_null',
              "CHECK(display_type NOT IN ('line_section', 'line_note') OR (amount_currency = 0 AND debit = 0 AND credit = 0 AND account_id IS NULL))",
