@@ -1497,6 +1497,20 @@ msgid ""
 msgstr "アカウント%sは消込を許可していません。まず、このアカウントの構成を変更して許可します。"
 
 #. module: account
+#. odoo-python
+#: code:addons/account/models/account_move_line.py:0
+#, python-format
+msgid "Account %s is of payable type, but is used in a sale operation."
+msgstr ""
+
+#. module: account
+#. odoo-python
+#: code:addons/account/models/account_move_line.py:0
+#, python-format
+msgid "Account %s is of receivable type, but is used in a purchase operation."
+msgstr ""
+
+#. module: account
 #: model:ir.model,name:account.model_account_cash_rounding
 msgid "Account Cash Rounding"
 msgstr "勘定科目現金丸め表示"
@@ -5054,7 +5068,7 @@ msgstr "ダッシュボード"
 #. module: account
 #: model:ir.actions.server,name:account.action_check_hash_integrity
 msgid "Data Inalterability Check"
-msgstr "データの不変性チェック"
+msgstr "データの変更不可チェック"
 
 #. module: account
 #: model_terms:ir.ui.view,arch_db:account.report_hash_integrity
@@ -6935,7 +6949,7 @@ msgstr "成長率比較"
 #. module: account
 #: model:ir.model.fields.selection,name:account.selection__account_cash_rounding__rounding_method__half-up
 msgid "HALF-UP"
-msgstr "五入"
+msgstr "切上げ"
 
 #. module: account
 #: model:ir.model.fields,field_description:account.field_res_config_settings__has_accounting_entries
@@ -7393,14 +7407,14 @@ msgstr "変更不可ハッシュ"
 #. module: account
 #: model_terms:ir.ui.view,arch_db:account.report_hash_integrity
 msgid "Inalterability check"
-msgstr "不変性チェック"
+msgstr "変更不可チェック"
 
 #. module: account
 #: model:ir.model.fields,field_description:account.field_account_bank_statement_line__secure_sequence_number
 #: model:ir.model.fields,field_description:account.field_account_move__secure_sequence_number
 #: model:ir.model.fields,field_description:account.field_account_payment__secure_sequence_number
 msgid "Inalteralbility No Gap Sequence #"
-msgstr "不変性ギャップなしシーケンス＃"
+msgstr "変更不可ギャップなしシーケンス＃"
 
 #. module: account
 #: model:ir.model.fields.selection,name:account.selection__account_payment_method__payment_type__inbound
@@ -9430,7 +9444,7 @@ msgstr "作成しない"
 #: code:addons/account/models/account_tax.py:0
 #, python-format
 msgid "Nested group of taxes are not allowed."
-msgstr ""
+msgstr "ネストされた税グループは使用できません。"
 
 #. module: account
 #: model:ir.model.fields,field_description:account.field_account_setup_bank_manual_config__new_journal_name
@@ -14728,6 +14742,14 @@ msgid ""
 "This journal already contains items, therefore you cannot modify its "
 "company."
 msgstr "このジャーナルにはすでにアイテムが含まれているため、会社を変更することはできません。"
+
+#. module: account
+#. odoo-python
+#: code:addons/account/models/account_journal.py:0
+#, python-format
+msgid ""
+"This journal is associated with a payment method. You cannot archive it"
+msgstr "この仕訳帳は支払方法に関連付けられています。アーカイブできません。"
 
 #. module: account
 #. odoo-python

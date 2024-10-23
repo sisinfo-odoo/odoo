@@ -1539,6 +1539,20 @@ msgstr ""
 "khoản này để làm việc đó."
 
 #. module: account
+#. odoo-python
+#: code:addons/account/models/account_move_line.py:0
+#, python-format
+msgid "Account %s is of payable type, but is used in a sale operation."
+msgstr ""
+
+#. module: account
+#. odoo-python
+#: code:addons/account/models/account_move_line.py:0
+#, python-format
+msgid "Account %s is of receivable type, but is used in a purchase operation."
+msgstr ""
+
+#. module: account
 #: model:ir.model,name:account.model_account_cash_rounding
 msgid "Account Cash Rounding"
 msgstr "Tài khoản làm tròn tiền mặt"
@@ -7672,7 +7686,7 @@ msgstr "Tài khoản doanh thu trên Mẫu sản phẩm"
 #. module: account
 #: model_terms:ir.ui.view,arch_db:account.view_account_journal_form
 msgid "Incoming Payments"
-msgstr "Thu tiền"
+msgstr "Phiếu thu"
 
 #. module: account
 #: model:ir.model.fields,help:account.field_res_config_settings__account_journal_payment_debit_account_id
@@ -7824,7 +7838,7 @@ msgstr "Mã nội bộ"
 #: model_terms:ir.ui.view,arch_db:account.account_journal_dashboard_kanban_view
 #, python-format
 msgid "Internal Transfer"
-msgstr "Giao dịch nội bộ"
+msgstr "Luân chuyển nội bộ"
 
 #. module: account
 #: model:ir.model.fields,field_description:account.field_res_config_settings__transfer_account_id
@@ -7836,7 +7850,7 @@ msgstr "Tài khoản giao dịch nội bộ"
 #: model_terms:ir.ui.view,arch_db:account.account_journal_dashboard_kanban_view
 #: model_terms:ir.ui.view,arch_db:account.view_account_payment_search
 msgid "Internal Transfers"
-msgstr "Điều chuyển nội bộ"
+msgstr "Luân chuyển nội bộ"
 
 #. module: account
 #: model:ir.model.fields,field_description:account.field_account_move_line__account_type
@@ -9704,7 +9718,7 @@ msgstr "Không bao giờ"
 #: code:addons/account/models/account_tax.py:0
 #, python-format
 msgid "Nested group of taxes are not allowed."
-msgstr ""
+msgstr "Không được phép có nhóm thuế lồng nhau."
 
 #. module: account
 #: model:ir.model.fields,field_description:account.field_account_setup_bank_manual_config__new_journal_name
@@ -10497,7 +10511,7 @@ msgstr "Phương thức thanh toán đi"
 #. module: account
 #: model_terms:ir.ui.view,arch_db:account.view_account_journal_form
 msgid "Outgoing Payments"
-msgstr "Thanh toán trước"
+msgstr "Phiếu chi"
 
 #. module: account
 #: model:ir.model.fields,help:account.field_res_config_settings__account_journal_payment_credit_account_id
@@ -15239,6 +15253,16 @@ msgstr ""
 
 #. module: account
 #. odoo-python
+#: code:addons/account/models/account_journal.py:0
+#, python-format
+msgid ""
+"This journal is associated with a payment method. You cannot archive it"
+msgstr ""
+"Sổ nhật ký được liên kết với một phương thức thanh toán. Bạn không thể lưu "
+"trữ nó"
+
+#. module: account
+#. odoo-python
 #: code:addons/account/models/company.py:0
 #, python-format
 msgid "This journal is not in strict mode."
@@ -15590,7 +15614,7 @@ msgstr "Tham số loại giao dịch"
 #: code:addons/account/wizard/account_automatic_entry_wizard.py:0
 #, python-format
 msgid "Transfer"
-msgstr "Điều chuyển"
+msgstr "Luân chuyển"
 
 #. module: account
 #: model_terms:ir.ui.view,arch_db:account.account_automatic_entry_wizard_form

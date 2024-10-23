@@ -827,12 +827,9 @@ msgstr ""
 #: model:ir.module.module,description:base.module_l10n_tr_reports
 msgid ""
 "\n"
-"        Accounting reports for Turkey\n"
+"        Accounting reports for Türkiye\n"
 "    "
 msgstr ""
-"\n"
-"        トルコ向けの会計レポート\n"
-"    "
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_uk_reports
@@ -17966,11 +17963,12 @@ msgid ""
 "%(country_code)s: the code of the country"
 msgstr ""
 "この国に属する住所に使用する表示形式。\n"
-"アドレスのすべてのフィールドでpythonスタイルの文字列パターンを使用できます(たとえば、'%(street)s'を使用してフィールド'street'を表示します)\n"
-"%(state_name)s:州の名前\n"
-"%(state_code )s:州のコード\n"
-"%(country_name)s:国の名前\n"
-"%(country_code)s:国のコード"
+"\n"
+"アドレスのすべてのフィールドでpythonスタイルの文字列パターンを使用できます(たとえば、'%(street)s' を使用してフィールド '町名番地' を表示します)\n"
+"%(state_name)s:州/都道府県の名前\n"
+"%(state_code)s:州/都道府県のコード\n"
+"%(country_name)s:国名\n"
+"%(country_code)s:国コード"
 
 #. module: base
 #. odoo-python
@@ -20129,7 +20127,7 @@ msgstr "ここから、あなたと連絡先にリンクされている全ての
 #. module: base
 #: model:ir.module.module,summary:base.module_sale_management
 msgid "From quotations to invoices"
-msgstr "見積もりから請求書まで"
+msgstr "見積から請求書まで"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.ir_access_view_search
@@ -23710,7 +23708,7 @@ msgstr "保守担当者"
 #: model:ir.module.category,name:base.module_category_manufacturing_maintenance
 #: model:ir.module.module,shortdesc:base.module_maintenance
 msgid "Maintenance"
-msgstr "メンテナンス"
+msgstr "整備"
 
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_hr_maintenance
@@ -27245,7 +27243,7 @@ msgstr "Odooは生成されたPDFをマージできません。"
 msgid ""
 "Odoo is unable to merge the generated PDFs because of {num_errors} corrupted"
 " file(s)"
-msgstr ""
+msgstr "破損したファイル {num_errors} があるため、Odooは生成されたPDFをマージできません。"
 
 #. module: base
 #: model:ir.model.fields,help:base.field_ir_sequence__padding
@@ -30849,12 +30847,12 @@ msgstr "設備/機器の保守管理"
 #. module: base
 #: model:ir.module.module,summary:base.module_industry_fsm_sale
 msgid "Schedule and track onsite operations, invoice time and material"
-msgstr "オンサイトオペレーション、請求書の時間と資料をスケジュールして追跡します"
+msgstr "オンサイトオペレーションをスケジュール、追跡し、タイムアンドマテリアル方式で請求"
 
 #. module: base
 #: model:ir.module.module,summary:base.module_industry_fsm
 msgid "Schedule and track onsite operations, time and material"
-msgstr "オンサイトの運用、時間、および資料のスケジュールと追跡"
+msgstr "オンサイトオペレーション、タイムアンドマテリアルのスケジュールと追跡"
 
 #. module: base
 #: model:ir.module.module,summary:base.module_calendar
@@ -34490,18 +34488,18 @@ msgstr "チュニジア"
 
 #. module: base
 #: model:res.country,name:base.tr
-msgid "Turkey"
-msgstr "トルコ"
+msgid "Türkiye"
+msgstr ""
 
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_l10n_tr
-msgid "Turkey - Accounting"
-msgstr "トルコ - 会計"
+msgid "Türkiye - Accounting"
+msgstr ""
 
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_l10n_tr_reports
-msgid "Turkey - Accounting Reports"
-msgstr "トルコ - 会計レポート"
+msgid "Türkiye - Accounting Reports"
+msgstr ""
 
 #. module: base
 #: model:res.country,name:base.tm
@@ -35614,7 +35612,7 @@ msgstr "リードのWebチャットセッションを表示する"
 #. odoo-python
 #: code:addons/base/models/ir_actions_report.py:0
 msgid "View Problematic Record(s)"
-msgstr ""
+msgstr "問題のあるレコードを表示"
 
 #. module: base
 #. odoo-python

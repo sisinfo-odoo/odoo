@@ -36,7 +36,7 @@
 # Teemu Ahonen <teemu.ahonen@web-veistamo.fi>, 2024
 # Kari Lindgren <kari.lindgren@emsystems.fi>, 2024
 # Tuomas Lyyra <tuomas.lyyra@legenda.fi>, 2024
-# Richard Mouthier <rmo@odoo.com>, 2024
+# Richard Mouthier (RMO) <rmo@odoo.com>, 2024
 # Martin Trigaux, 2024
 # Jarmo Kortetjärvi <jarmo.kortetjarvi@gmail.com>, 2024
 # Larissa Manderfeld, 2024
@@ -884,12 +884,9 @@ msgstr ""
 #: model:ir.module.module,description:base.module_l10n_tr_reports
 msgid ""
 "\n"
-"        Accounting reports for Turkey\n"
+"        Accounting reports for Türkiye\n"
 "    "
 msgstr ""
-"\n"
-"        Turkin kirjanpitoraportit\n"
-"    "
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_uk_reports
@@ -28840,6 +28837,8 @@ msgid ""
 "Odoo is unable to merge the generated PDFs because of {num_errors} corrupted"
 " file(s)"
 msgstr ""
+"Odoo ei pysty yhdistämään luotuja PDF-tiedostoja {num_errors} "
+"korruptoituneiden tiedostojen vuoksi"
 
 #. module: base
 #: model:ir.model.fields,help:base.field_ir_sequence__padding
@@ -36332,18 +36331,18 @@ msgstr "Tunisia"
 
 #. module: base
 #: model:res.country,name:base.tr
-msgid "Turkey"
-msgstr "Turkki"
+msgid "Türkiye"
+msgstr ""
 
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_l10n_tr
-msgid "Turkey - Accounting"
-msgstr "Turkki - Kirjanpito"
+msgid "Türkiye - Accounting"
+msgstr ""
 
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_l10n_tr_reports
-msgid "Turkey - Accounting Reports"
-msgstr "Turkki - Kirjanpitoraportit"
+msgid "Türkiye - Accounting Reports"
+msgstr ""
 
 #. module: base
 #: model:res.country,name:base.tm
@@ -37494,7 +37493,7 @@ msgstr "Näytä livechat-istunto liideille"
 #. odoo-python
 #: code:addons/base/models/ir_actions_report.py:0
 msgid "View Problematic Record(s)"
-msgstr ""
+msgstr "Näytä ongelmalliset tietueet"
 
 #. module: base
 #. odoo-python

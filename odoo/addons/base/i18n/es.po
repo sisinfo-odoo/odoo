@@ -854,12 +854,9 @@ msgstr ""
 #: model:ir.module.module,description:base.module_l10n_tr_reports
 msgid ""
 "\n"
-"        Accounting reports for Turkey\n"
+"        Accounting reports for Türkiye\n"
 "    "
 msgstr ""
-"\n"
-"        Informes contables para Turquía\n"
-"    "
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_uk_reports
@@ -36346,18 +36343,18 @@ msgstr "Túnez"
 
 #. module: base
 #: model:res.country,name:base.tr
-msgid "Turkey"
+msgid "Türkiye"
 msgstr "Turquía"
 
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_l10n_tr
-msgid "Turkey - Accounting"
+msgid "Türkiye - Accounting"
 msgstr "Turquía - Contabilidad"
 
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_l10n_tr_reports
-msgid "Turkey - Accounting Reports"
-msgstr "Turquía - Informes contables"
+msgid "Türkiye - Accounting Reports"
+msgstr "Turquía - Reportes contables"
 
 #. module: base
 #: model:res.country,name:base.tm
@@ -36693,8 +36690,8 @@ msgid ""
 "Uninstalling modules can be risky, we recommend you to try it on a duplicate"
 " or test database first."
 msgstr ""
-"Desinstalar módulos puede ser riesgoso, recomendamos que lo intente primero "
-"en una base de datos de prueba."
+"Desinstalar módulos puede ser arriesgado. Recomendamos que lo intente "
+"primero en una base de datos de prueba."
 
 #. module: base
 #. odoo-python

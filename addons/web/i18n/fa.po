@@ -2925,7 +2925,7 @@ msgstr "طرح بندی"
 #. module: web
 #: model:ir.model.fields,field_description:web.field_base_document_layout__layout_background
 msgid "Layout Background"
-msgstr ""
+msgstr "پس زمینه چیدمان"
 
 #. module: web
 #. odoo-javascript
@@ -4718,7 +4718,7 @@ msgstr ""
 #: code:addons/web/static/src/legacy/xml/base.xml:0
 #, python-format
 msgid "Search a field..."
-msgstr ""
+msgstr "جستجو یک فیلد..."
 
 #. module: web
 #. odoo-javascript

@@ -747,7 +747,7 @@ class Project(models.Model):
         self.ensure_one()
         portal_privacy = self.privacy_visibility == 'portal'
         for group_name, _group_method, group_data in groups:
-            if group_name in ('customer', 'user') or group_name == 'portal_customer' and not portal_privacy:
+            if group_name in ['portal', 'portal_customer'] and not portal_privacy:
                 group_data['has_button_access'] = False
         return groups
 
@@ -782,7 +782,7 @@ class Project(models.Model):
         favorite_projects.write({'favorite_user_ids': [(3, self.env.uid)]})
 
     def action_view_tasks(self):
-        action = self.env['ir.actions.act_window'].with_context({'active_id': self.id})._for_xml_id('project.act_project_project_2_project_task_all')
+        action = self.env['ir.actions.act_window'].with_context(active_id=self.id)._for_xml_id('project.act_project_project_2_project_task_all')
         action['display_name'] = _("%(name)s", name=self.name)
         context = action['context'].replace('active_id', str(self.id))
         context = ast.literal_eval(context)
@@ -2540,7 +2540,12 @@ class Task(models.Model):
                     ('partner_id', '=', False), email_domain, ('stage_id.fold', '=', False)
                 ]).write({'partner_id': new_partner[0].id})
         # use the sanitized body of the email from the message thread to populate the task's description
-        if not self.description and message.subtype_id == self._creation_subtype() and self.partner_id == message.author_id:
+        if (
+           not self.description
+           and message.subtype_id == self._creation_subtype()
+           and self.partner_id == message.author_id
+           and msg_vals['message_type'] == 'email'
+        ):
             self.description = message.body
         return super(Task, self)._message_post_after_hook(message, msg_vals)
 

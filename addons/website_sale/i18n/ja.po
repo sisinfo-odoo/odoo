@@ -365,7 +365,7 @@ msgstr "<span class=\"s_website_form_label_content\">書類をアップロード
 #. module: website_sale
 #: model_terms:ir.ui.view,arch_db:website_sale.extra_info
 msgid "<span class=\"s_website_form_label_content\">Your Reference</span>"
-msgstr "<span class=\"s_website_form_label_content\">参照</span>"
+msgstr "<span class=\"s_website_form_label_content\">参照番号</span>"
 
 #. module: website_sale
 #: model_terms:ir.ui.view,arch_db:website_sale.product_template_only_website_form_view
@@ -3680,12 +3680,12 @@ msgstr "プロダクトページに留まる"
 #. module: website_sale
 #: model_terms:ir.ui.view,arch_db:website_sale.address
 msgid "Street 2"
-msgstr "アドレス2 (ビル名等)"
+msgstr "町名番地2 "
 
 #. module: website_sale
 #: model_terms:ir.ui.view,arch_db:website_sale.address
 msgid "Street <span class=\"d-none d-md-inline\"> and Number</span>"
-msgstr "町名番地"
+msgstr "町名<span class=\"d-none d-md-inline\">番地</span>"
 
 #. module: website_sale
 #: model_terms:ir.ui.view,arch_db:website_sale.snippet_options

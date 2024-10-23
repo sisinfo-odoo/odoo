@@ -2452,7 +2452,7 @@ msgstr ""
 #. module: web
 #: model:ir.model.fields,field_description:web.field_base_document_layout__font
 msgid "Font"
-msgstr "字體"
+msgstr "字型"
 
 #. module: web
 #. odoo-javascript
@@ -4860,7 +4860,7 @@ msgstr "全選"
 #: code:addons/web/static/src/legacy/xml/base.xml:0
 #, python-format
 msgid "Select all records matching the search"
-msgstr ""
+msgstr "選取所有符合搜尋條件的記錄"
 
 #. module: web
 #. openerp-web
@@ -5535,7 +5535,7 @@ msgstr "在這個系統上找不到Wkhtmltopdf。報告將以HTML顯示。"
 #: code:addons/web/static/src/views/form/form_status_indicator/form_status_indicator.xml:0
 #, python-format
 msgid "Unable to save"
-msgstr ""
+msgstr "未能儲存"
 
 #. module: web
 #. odoo-javascript
