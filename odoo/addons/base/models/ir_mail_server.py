@@ -55,7 +55,7 @@ class SMTPConnection:
 SMTP_ATTRIBUTES = [
     'auth', 'auth_cram_md5', 'auth_login', 'auth_plain', 'close', 'data', 'docmd', 'ehlo', 'ehlo_or_helo_if_needed',
     'expn', 'from_filter', 'getreply', 'has_extn', 'login', 'mail', 'noop', 'putcmd', 'quit', 'rcpt', 'rset',
-    'send_message', 'sendmail', 'set_debuglevel', 'smtp_from', 'starttls', 'verify', '_host',
+    'send_message', 'sendmail', 'set_debuglevel', 'smtp_from', 'starttls', 'user', 'verify', '_host',
 ]
 for name in SMTP_ATTRIBUTES:
     setattr(SMTPConnection, name, make_wrap_property(name))
@@ -666,13 +666,15 @@ class IrMailServer(models.Model):
             mail_servers = self.sudo().search([], order='sequence')
 
         # 1. Try to find a mail server for the right mail from
-        mail_server = mail_servers.filtered(lambda m: email_normalize(m.from_filter) == email_from_normalized)
-        if mail_server:
-            return mail_server[0], email_from
+        # Skip if passed email_from is False (example Odoobot has no email address)
+        if email_from:
+            mail_server = mail_servers.filtered(lambda m: email_normalize(m.from_filter) == email_from_normalized)
+            if mail_server:
+                return mail_server[0], email_from
 
-        mail_server = mail_servers.filtered(lambda m: email_domain_normalize(m.from_filter) == email_from_domain)
-        if mail_server:
-            return mail_server[0], email_from
+            mail_server = mail_servers.filtered(lambda m: email_domain_normalize(m.from_filter) == email_from_domain)
+            if mail_server:
+                return mail_server[0], email_from
 
         # 2. Try to find a mail server for <notifications@domain.com>
         if notifications_email:
