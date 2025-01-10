@@ -1428,6 +1428,13 @@ msgid "BACK arrow"
 msgstr "Săgeată înapoi"
 
 #. module: web
+#. odoo-javascript
+#: code:addons/web/static/src/search/control_panel/control_panel.js:0
+#, python-format
+msgid "Back to “%s”"
+msgstr ""
+
+#. module: web
 #: model:ir.model.fields,field_description:web.field_base_document_layout__layout_background_image
 msgid "Background Image"
 msgstr "Imagine fundal"
@@ -3430,6 +3437,14 @@ msgstr "Această opțiune este disponibilă în varianta Enterprise!"
 #, python-format
 msgid "Go to URL"
 msgstr "Mergi la URL"
+
+#. module: web
+#. odoo-javascript
+#: code:addons/web/static/src/views/fields/google_slide_viewer.js:0
+#: code:addons/web/static/src/views/fields/google_slide_viewer.xml:0
+#, python-format
+msgid "Google Slide Viewer"
+msgstr ""
 
 #. module: web
 #. odoo-javascript
@@ -5690,8 +5705,14 @@ msgstr "Vă rugăm selectați câmpurile pentru a salva lista de export..."
 msgid ""
 "Please use the copy button to report the error to your support service."
 msgstr ""
-"Vă rog să utilizați butonul de copiere pentru a raporta eroarea către serviciul de suport. \n"
-"Apăsați pe butonul de alături pentru a copia eroare în clipboard și apoi folosiți Ctrl+V în fereastra de conversație cu echipa de suport. Nu transmiteți o pază cu aceasta fereastră."
+"⚠️ Atenție!\n"
+"\n"
+"📋 Pentru a rezolva această problemă cât mai rapid:\n"
+"\n"
+"🔹 Apasă pe butonul „Copiază eroare” de mai jos. ✅\n"
+"🔹 Lipește textul copiat în conversația cu echipa de suport folosind combinația de taste Ctrl+V. 💬\n"
+"\n"
+"🚫 Important: Nu trimite capturi de ecran, deoarece acestea nu includ toate informațiile necesare pentru diagnosticare. 🔍"
 
 #. module: web
 #. odoo-javascript
@@ -6034,6 +6055,10 @@ msgid ""
 "\n"
 "Think twice before you click that 'Delete' button!"
 msgstr ""
+"Ești gata să-ți faci recordul să dispară în aer? Esti sigur?\n"
+"Va dispărea pentru totdeauna!\n"
+"\n"
+"Gândește-te de două ori înainte de a face clic pe butonul „Șterge”!"
 
 #. module: web
 #. odoo-javascript
@@ -6593,6 +6618,13 @@ msgstr "Selectează o vizualizare"
 #, python-format
 msgid "Select all"
 msgstr "Selectează tot"
+
+#. module: web
+#. odoo-javascript
+#: code:addons/web/static/src/views/list/list_controller.xml:0
+#, python-format
+msgid "Select all records matching the search"
+msgstr ""
 
 #. module: web
 #. odoo-javascript
@@ -7498,7 +7530,7 @@ msgid ""
 "                    active filter in the search bar."
 msgstr ""
 "Încercați să adăugați câteva înregistrări sau asigurați-vă că nu există "
-"niciun\n"
+"niciun filtru activ în bara de căutare."
 
 #. module: web
 #. odoo-javascript
@@ -33691,14 +33723,14 @@ msgstr ""
 #: code:addons/web/static/src/views/view_components/column_progress.xml:0
 #, python-format
 msgid "{{ bar.count }} {{ bar.string }}"
-msgstr ""
+msgstr "{{ bar.count }} {{ bar.string }}"
 
 #. module: web
 #. odoo-javascript
 #: code:addons/web/static/src/views/kanban/kanban_column_quick_create.xml:0
 #, python-format
 msgid "{{ relatedFieldName }}..."
-msgstr ""
+msgstr "{{ relatedFieldName }}..."
 
 #. module: web
 #. odoo-javascript
