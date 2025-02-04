@@ -9,6 +9,11 @@
 # Kostas Goutoudis <goutoudis@gmail.com>, 2024
 # George Tarasidis <george_tarasidis@yahoo.com>, 2024
 # Martin Trigaux, 2024
+# Maria Chalepiadou, 2025
+# Gerasimos Kanelatos, 2025
+# Agapi Psyllou, 2025
+# Anastasia Mimou, 2025
+# Charalampos Loukas, 2025
 # 
 msgid ""
 msgstr ""
@@ -16,7 +21,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2024-08-13 10:26+0000\n"
 "PO-Revision-Date: 2023-10-26 23:09+0000\n"
-"Last-Translator: Martin Trigaux, 2024\n"
+"Last-Translator: Charalampos Loukas, 2025\n"
 "Language-Team: Greek (https://app.transifex.com/odoo/teams/41243/el/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -446,7 +451,7 @@ msgstr "Κατάσταση Δραστηριότητας"
 #. module: hr_recruitment
 #: model:ir.model.fields,field_description:hr_recruitment.field_hr_applicant__activity_type_icon
 msgid "Activity Type Icon"
-msgstr ""
+msgstr "Εικονίδιο Τύπου Δραστηριότητας"
 
 #. module: hr_recruitment
 #: model:ir.actions.act_window,name:hr_recruitment.mail_activity_type_action_config_hr_applicant
@@ -468,7 +473,7 @@ msgstr "Προσθήκη νέας ετικέτας"
 #. module: hr_recruitment
 #: model:res.groups,name:hr_recruitment.group_hr_recruitment_manager
 msgid "Administrator"
-msgstr ""
+msgstr "Διαχειριστής"
 
 #. module: hr_recruitment
 #: model:ir.model.fields,field_description:hr_recruitment.field_hr_job__alias_id
@@ -689,7 +694,7 @@ msgstr "Ανατέθηκε"
 #. module: hr_recruitment
 #: model:ir.model.fields,field_description:hr_recruitment.field_hr_applicant__message_attachment_count
 msgid "Attachment Count"
-msgstr ""
+msgstr "Αριθμός Συνημμένων"
 
 #. module: hr_recruitment
 #: model:ir.model.fields,field_description:hr_recruitment.field_hr_applicant__attachment_ids
@@ -778,7 +783,7 @@ msgstr ""
 #. module: hr_recruitment
 #: model:ir.model,name:hr_recruitment.model_calendar_event
 msgid "Calendar Event"
-msgstr ""
+msgstr "Συμβάν Ημερολογίου"
 
 #. module: hr_recruitment
 #: model:ir.model.fields,field_description:hr_recruitment.field_hr_applicant__campaign_id
@@ -1089,6 +1094,8 @@ msgstr "Εμφάνιση Ονόματος"
 #, python-format
 msgid "Do not have access, skip this data for user's digest email"
 msgstr ""
+"Δεν έχετε πρόσβαση, παραλείψτε αυτά τα δεδομένα για το ηλεκτρονικό "
+"ταχυδρομείο του χρήστη"
 
 #. module: hr_recruitment
 #: model:hr.recruitment.degree,name:hr_recruitment.degree_bac5
@@ -1371,7 +1378,7 @@ msgstr ""
 #. module: hr_recruitment
 #: model:ir.model.fields,field_description:hr_recruitment.field_hr_applicant__has_message
 msgid "Has Message"
-msgstr ""
+msgstr "Έχει Μήνυμα"
 
 #. module: hr_recruitment
 #: model:ir.model.fields,field_description:hr_recruitment.field_hr_applicant__date_closed
@@ -1435,7 +1442,7 @@ msgstr "Εάν επιλεγεί τα νέα μηνύματα χρειάζοντ�
 #: model:ir.model.fields,help:hr_recruitment.field_hr_applicant__message_has_error
 #: model:ir.model.fields,help:hr_recruitment.field_hr_applicant__message_has_sms_error
 msgid "If checked, some messages have a delivery error."
-msgstr ""
+msgstr "Αν επιλεγεί, κάποια μηνύματα έχουν σφάλμα παράδοσης."
 
 #. module: hr_recruitment
 #: model:ir.model.fields,help:hr_recruitment.field_hr_recruitment_stage__hired_stage
@@ -1766,7 +1773,7 @@ msgstr ""
 #: code:addons/hr_recruitment/static/src/js/tours/hr_recruitment.js:0
 #, python-format
 msgid "Let’s go back to the dashboard."
-msgstr ""
+msgstr "Ας επιστρέψουμε στο ταμπλό."
 
 #. module: hr_recruitment
 #: model:ir.model.fields,field_description:hr_recruitment.field_hr_applicant__linkedin_profile
@@ -1827,7 +1834,7 @@ msgstr "Μενού"
 #. module: hr_recruitment
 #: model:ir.model.fields,field_description:hr_recruitment.field_hr_applicant__message_has_error
 msgid "Message Delivery error"
-msgstr ""
+msgstr "Σφάλμα παράδοσης μηνύματος"
 
 #. module: hr_recruitment
 #: model:ir.model.fields,field_description:hr_recruitment.field_hr_applicant__message_ids
@@ -2015,17 +2022,17 @@ msgstr ""
 #. module: hr_recruitment
 #: model:ir.model.fields,field_description:hr_recruitment.field_hr_applicant__message_has_error_counter
 msgid "Number of errors"
-msgstr ""
+msgstr "Αριθμός σφαλμάτων"
 
 #. module: hr_recruitment
 #: model:ir.model.fields,help:hr_recruitment.field_hr_applicant__message_needaction_counter
 msgid "Number of messages requiring action"
-msgstr ""
+msgstr "Αριθμός μηνυμάτων που απαιτούν ενέργεια"
 
 #. module: hr_recruitment
 #: model:ir.model.fields,help:hr_recruitment.field_hr_applicant__message_has_error_counter
 msgid "Number of messages with delivery error"
-msgstr ""
+msgstr "Αριθμός μηνυμάτων με σφάλμα παράδοσης"
 
 #. module: hr_recruitment
 #: model_terms:ir.actions.act_window,help:hr_recruitment.action_hr_job_applications

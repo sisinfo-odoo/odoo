@@ -4255,6 +4255,30 @@ class TestAccountMoveOutInvoiceOnchanges(AccountTestInvoicingCommon):
         for line in move.line_ids:
             self.assertEqual(line.date, move.date)
 
+    def test_before_initial_rate(self):
+        def invoice():
+            return self.init_invoice(
+                move_type='out_invoice',
+                invoice_date='1900-01-01',
+                partner=self.partner_a,
+                amounts=[1000.0],
+                taxes=[],
+                currency=currency,
+            )
+
+        currency = self.currency_data['currency']
+        self.assertRecordValues(invoice(), [{
+            'amount_total': 1000.0,
+            'amount_total_signed': 1000.0,
+        }])
+        currency.rate_ids[-1].unlink()  # the setup creates a rate of 1 far in the past
+        self.assertRecordValues(invoice(), [{
+            'amount_total': 1000.0,
+            'amount_total_signed': 333.33,
+        }])
+
+
+
     def test_on_quick_encoding_non_accounting_lines(self):
         """ Ensure that quick encoding values are only applied to accounting lines) """
 
@@ -4425,3 +4449,15 @@ class TestAccountMoveOutInvoiceOnchanges(AccountTestInvoicingCommon):
                 'credit': 0.0,
             },
         ])
+
+    def test_out_invoice_partner_context(self):
+        """No line should take the partner of the context instead of the one specified in the create vals."""
+        move = self.env['account.move'].with_context(default_partner_id=self.partner_b.id).create({
+            'move_type': 'out_invoice',
+            'partner_id': self.partner_a.id,
+            'invoice_date': '2017-01-01',
+            'invoice_line_ids': [Command.create({
+                'price_unit': 1000.0,
+            })],
+        })
+        self.assertEqual(move.line_ids.partner_id, self.partner_a)

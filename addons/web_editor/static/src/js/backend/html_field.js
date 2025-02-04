@@ -404,8 +404,8 @@ export class HtmlField extends Component {
                     await this.updateValue();
                 }
                 await savePendingImagesPromise;
-                if (this.state.showCodeView) {
-                    const codeViewEl = this._getCodeViewEl();
+                const codeViewEl = this._getCodeViewEl();
+                if (codeViewEl) {
                     codeViewEl.value = this.wysiwyg.getValue();
                 }
                 if (this.props.isInlineStyle) {
@@ -693,11 +693,6 @@ export const htmlField = {
         label: _t("Snippets"),
         name: "snippets",
         type: "string"
-    }, {
-        label: _t("No videos"),
-        name: "noVideos",
-        type: "boolean",
-        default: true
     }, {
         label: _t("Resizable"),
         name: "resizable",

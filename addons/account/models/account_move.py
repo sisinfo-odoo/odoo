@@ -15,6 +15,7 @@ from textwrap import shorten
 from odoo import api, fields, models, _, Command, SUPERUSER_ID, modules, tools
 from odoo.addons.account.tools import format_structured_reference_iso
 from odoo.exceptions import UserError, ValidationError, AccessError, RedirectWarning
+from odoo.tools.misc import clean_context
 from odoo.tools import (
     date_utils,
     email_re,
@@ -2319,7 +2320,7 @@ class AccountMove(models.Model):
         if to_delete:
             self.env['account.move.line'].browse(to_delete).with_context(dynamic_unlink=True).unlink()
         if to_create:
-            self.env['account.move.line'].create([
+            self.env['account.move.line'].with_context(clean_context(self.env.context)).create([
                 {**key, **values, 'display_type': line_type}
                 for key, values in to_create.items()
             ])
@@ -4867,17 +4868,16 @@ class AccountMove(models.Model):
             force_email_company=force_email_company, force_email_lang=force_email_lang
         )
         subtitles = [render_context['record'].name]
-        if (
-            self.invoice_date_due
-            and self.is_invoice(include_receipts=True)
-            and self.payment_state not in ('in_payment', 'paid')
-        ):
-            subtitles.append(_('%(amount)s due\N{NO-BREAK SPACE}%(date)s',
-                           amount=format_amount(self.env, self.amount_total, self.currency_id, lang_code=render_context.get('lang')),
-                           date=format_date(self.env, self.invoice_date_due, date_format='short', lang_code=render_context.get('lang'))
-                          ))
-        else:
-            subtitles.append(format_amount(self.env, self.amount_total, self.currency_id, lang_code=render_context.get('lang')))
+        if self.is_invoice(include_receipts=True):
+            # Only show the amount in emails for non-miscellaneous moves. It might confuse recipients otherwise.
+            if self.invoice_date_due and self.payment_state not in ('in_payment', 'paid'):
+                subtitles.append(_(
+                    '%(amount)s due\N{NO-BREAK SPACE}%(date)s',
+                    amount=format_amount(self.env, self.amount_total, self.currency_id, lang_code=render_context.get('lang')),
+                    date=format_date(self.env, self.invoice_date_due, date_format='short', lang_code=render_context.get('lang')),
+                ))
+            else:
+                subtitles.append(format_amount(self.env, self.amount_total, self.currency_id, lang_code=render_context.get('lang')))
         render_context['subtitles'] = subtitles
         return render_context
 

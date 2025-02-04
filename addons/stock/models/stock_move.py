@@ -7,7 +7,7 @@ from datetime import timedelta
 from operator import itemgetter
 from re import findall as regex_findall
 
-from odoo import _, api, Command, fields, models
+from odoo import SUPERUSER_ID, _, api, Command, fields, models
 from odoo.exceptions import UserError
 from odoo.osv import expression
 from odoo.osv.expression import OR
@@ -1777,6 +1777,9 @@ Please change the quantity done or the rounding precision of your unit of measur
         # self cannot contain moves that are either cancelled or done, therefore we can safely
         # unlink all associated move_line_ids
         moves_to_cancel._do_unreserve()
+        cancel_moves_origin = self.env['ir.config_parameter'].sudo().get_param('stock.cancel_moves_origin')
+
+        moves_to_cancel.state = 'cancel'
 
         for move in moves_to_cancel:
             siblings_states = (move.move_dest_ids.mapped('move_orig_ids') - move).mapped('state')
@@ -1784,6 +1787,8 @@ Please change the quantity done or the rounding precision of your unit of measur
                 # only cancel the next move if all my siblings are also cancelled
                 if all(state == 'cancel' for state in siblings_states):
                     move.move_dest_ids.filtered(lambda m: m.state != 'done')._action_cancel()
+                    if cancel_moves_origin:
+                        move.move_orig_ids.sudo().filtered(lambda m: m.state != 'done')._action_cancel()
             else:
                 if all(state in ('done', 'cancel') for state in siblings_states):
                     move_dest_ids = move.move_dest_ids
@@ -1792,7 +1797,6 @@ Please change the quantity done or the rounding precision of your unit of measur
                         'move_orig_ids': [Command.unlink(move.id)]
                     })
         moves_to_cancel.write({
-            'state': 'cancel',
             'move_orig_ids': [(5, 0, 0)],
             'procure_method': 'make_to_stock',
         })
@@ -2014,6 +2018,8 @@ Please change the quantity done or the rounding precision of your unit of measur
         return new_move_vals
 
     def _recompute_state(self):
+        if self._context.get('preserve_state'):
+            return
         moves_state_to_write = defaultdict(set)
         for move in self:
             rounding = move.product_uom.rounding
@@ -2040,7 +2046,7 @@ Please change the quantity done or the rounding precision of your unit of measur
 
     def _get_lang(self):
         """Determine language to use for translated description"""
-        return self.picking_id.partner_id.lang or self.partner_id.lang or self.env.user.lang
+        return self.picking_id.partner_id.lang or self.partner_id.lang or (self.env.user.id != SUPERUSER_ID and self.env.user.lang) or self.env.context.get('lang') or self.env['res.users'].browse(SUPERUSER_ID).lang
 
     def _get_source_document(self):
         """ Return the move's document, used by `stock.forecasted_product_productt`
