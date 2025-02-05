@@ -3488,6 +3488,8 @@ class AccountMoveLine(models.Model):
         for rec in values:
             if rec:
                 values_tmp.append(rec)
+            else:
+                values_tmp.append('Sin valores')
         values = values_tmp if values_tmp else ['Sin valores']
 
         return ' - '.join(values)
