@@ -839,53 +839,54 @@ class AccountPayment(models.Model):
         ''' Update the account.move regarding the modified account.payment.
         :param changed_fields: A list containing all modified fields on account.payment.
         '''
-        if self._context.get('skip_account_move_synchronization'):
-            return
-
-        if not any(field_name in changed_fields for field_name in self._get_trigger_fields_to_synchronize()):
-            return
-
-        for pay in self.with_context(skip_account_move_synchronization=True):
-            liquidity_lines, counterpart_lines, writeoff_lines = pay._seek_for_lines()
-
-            # Make sure to preserve the write-off amount.
-            # This allows to create a new payment with custom 'line_ids'.
-
-            write_off_line_vals = []
-            if liquidity_lines and counterpart_lines and writeoff_lines:
-                write_off_line_vals.append({
-                    'name': writeoff_lines[0].name,
-                    'account_id': writeoff_lines[0].account_id.id,
-                    'partner_id': writeoff_lines[0].partner_id.id,
-                    'currency_id': writeoff_lines[0].currency_id.id,
-                    'amount_currency': sum(writeoff_lines.mapped('amount_currency')),
-                    'balance': sum(writeoff_lines.mapped('balance')),
-                })
-
-            line_vals_list = pay._prepare_move_line_default_vals(write_off_line_vals=write_off_line_vals)
-
-            line_ids_commands = [
-                Command.update(liquidity_lines.id, line_vals_list[0]) if liquidity_lines else Command.create(line_vals_list[0]),
-                Command.update(counterpart_lines.id, line_vals_list[1]) if counterpart_lines else Command.create(line_vals_list[1])
-            ]
-
-            for line in writeoff_lines:
-                line_ids_commands.append((2, line.id))
-
-            for extra_line_vals in line_vals_list[2:]:
-                line_ids_commands.append((0, 0, extra_line_vals))
-
-            # Update the existing journal items.
-            # If dealing with multiple write-off lines, they are dropped and a new one is generated.
-
-            pay.move_id\
-                .with_context(skip_invoice_sync=True)\
-                .write({
-                    'partner_id': pay.partner_id.id,
-                    'currency_id': pay.currency_id.id,
-                    'partner_bank_id': pay.partner_bank_id.id,
-                    'line_ids': line_ids_commands,
-                })
+        pass
+        # if self._context.get('skip_account_move_synchronization'):
+        #     return
+        #
+        # if not any(field_name in changed_fields for field_name in self._get_trigger_fields_to_synchronize()):
+        #     return
+        #
+        # for pay in self.with_context(skip_account_move_synchronization=True):
+        #     liquidity_lines, counterpart_lines, writeoff_lines = pay._seek_for_lines()
+        #
+        #     # Make sure to preserve the write-off amount.
+        #     # This allows to create a new payment with custom 'line_ids'.
+        #
+        #     write_off_line_vals = []
+        #     if liquidity_lines and counterpart_lines and writeoff_lines:
+        #         write_off_line_vals.append({
+        #             'name': writeoff_lines[0].name,
+        #             'account_id': writeoff_lines[0].account_id.id,
+        #             'partner_id': writeoff_lines[0].partner_id.id,
+        #             'currency_id': writeoff_lines[0].currency_id.id,
+        #             'amount_currency': sum(writeoff_lines.mapped('amount_currency')),
+        #             'balance': sum(writeoff_lines.mapped('balance')),
+        #         })
+        #
+        #     line_vals_list = pay._prepare_move_line_default_vals(write_off_line_vals=write_off_line_vals)
+        #
+        #     line_ids_commands = [
+        #         Command.update(liquidity_lines.id, line_vals_list[0]) if liquidity_lines else Command.create(line_vals_list[0]),
+        #         Command.update(counterpart_lines.id, line_vals_list[1]) if counterpart_lines else Command.create(line_vals_list[1])
+        #     ]
+        #
+        #     for line in writeoff_lines:
+        #         line_ids_commands.append((2, line.id))
+        #
+        #     for extra_line_vals in line_vals_list[2:]:
+        #         line_ids_commands.append((0, 0, extra_line_vals))
+        #
+        #     # Update the existing journal items.
+        #     # If dealing with multiple write-off lines, they are dropped and a new one is generated.
+        #
+        #     pay.move_id\
+        #         .with_context(skip_invoice_sync=True)\
+        #         .write({
+        #             'partner_id': pay.partner_id.id,
+        #             'currency_id': pay.currency_id.id,
+        #             'partner_bank_id': pay.partner_bank_id.id,
+        #             'line_ids': line_ids_commands,
+        #         })
 
     def _create_paired_internal_transfer_payment(self):
         ''' When an internal transfer is posted, a paired payment is created
