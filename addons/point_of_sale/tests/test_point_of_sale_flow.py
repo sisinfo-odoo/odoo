@@ -2001,10 +2001,12 @@ class TestPointOfSaleFlow(TestPointOfSaleCommon):
 
         pos_order_id = self.PosOrder.create_from_ui([product_order])[0]['id']
         pos_order = self.PosOrder.search([('id', '=', pos_order_id)])
-        payments = pos_order.account_move.invoice_payments_widget['content']
+        payments = pos_order.payment_ids
+        self.assertRecordValues(payments.sorted(), [
+            {'amount': -50, 'payment_method_id': self.cash_payment_method.id, 'is_change': True},
+            {'amount': 100, 'payment_method_id': self.cash_payment_method.id, 'is_change': False},
+            {'amount': 400, 'payment_method_id': self.bank_payment_method.id, 'is_change': False},
+        ])
 
-        self.assertEqual(pos_order.amount_return, 50)
-        self.assertEqual(payments[0]['pos_payment_name'], 'Bank')
-        self.assertEqual(payments[0]['amount'], 400)
-        self.assertEqual(payments[1]['pos_payment_name'], 'Cash')
-        self.assertEqual(payments[1]['amount'], 50)
+        account_moves = self.env['account.move'].search([('pos_payment_ids', 'in', pos_order.payment_ids.ids)])
+        self.assertEqual(sum(account_moves.mapped('amount_total')), pos_order.amount_total)

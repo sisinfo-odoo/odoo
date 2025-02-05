@@ -985,6 +985,13 @@ msgstr "過期日期"
 
 #. module: loyalty
 #. odoo-python
+#: code:addons/loyalty/models/loyalty_card.py:0
+#, python-format
+msgid "Expiration date cannot be set on a loyalty card."
+msgstr ""
+
+#. module: loyalty
+#. odoo-python
 #: code:addons/loyalty/models/loyalty_program.py:0
 #: code:addons/loyalty/models/loyalty_program.py:0
 #, python-format
@@ -1918,7 +1925,7 @@ msgstr "不可刪除 %(name)s，因為它用於「優惠券及會員」。請將
 #. module: loyalty
 #: model:mail.template,report_name:loyalty.mail_template_loyalty_card
 msgid "Your Coupon Code"
-msgstr "聖上的優惠券代碼"
+msgstr "你的優惠券代碼"
 
 #. module: loyalty
 #: model:mail.template,report_name:loyalty.mail_template_gift_card

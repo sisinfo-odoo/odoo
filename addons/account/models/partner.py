@@ -478,7 +478,8 @@ class ResPartner(models.Model):
         company_dependent=True, copy=False, readonly=False)
     use_partner_credit_limit = fields.Boolean(
         string='Partner Limit', groups='account.group_account_invoice,account.group_account_readonly',
-        compute='_compute_use_partner_credit_limit', inverse='_inverse_use_partner_credit_limit')
+        compute='_compute_use_partner_credit_limit', inverse='_inverse_use_partner_credit_limit',
+        help='Set a value greater than 0.0 to activate a credit limit check')
     show_credit_limit = fields.Boolean(
         default=lambda self: self.env.company.account_use_credit_limit,
         compute='_compute_show_credit_limit', groups='account.group_account_invoice,account.group_account_readonly')
@@ -538,6 +539,7 @@ class ResPartner(models.Model):
     duplicated_bank_account_partners_count = fields.Integer(
         compute='_compute_duplicated_bank_account_partners_count',
     )
+    is_coa_installed = fields.Boolean(store=False, default=lambda partner: bool(partner.env.company.chart_template_id))
 
     def _compute_bank_count(self):
         bank_data = self.env['res.partner.bank']._read_group([('partner_id', 'in', self.ids)], ['partner_id'], ['partner_id'])
@@ -674,6 +676,7 @@ class ResPartner(models.Model):
                     """).format(field=sql.Identifier(field))
                     self.env.cr.execute(query, {'partner_ids': tuple(self.ids), 'n': n})
                     self.invalidate_recordset([field])
+                    self.modified([field])
             except DatabaseError as e:
                 # 55P03 LockNotAvailable
                 # 40001 SerializationFailure

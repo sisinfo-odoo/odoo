@@ -1632,13 +1632,31 @@ class BaseModel(metaclass=MetaModel):
         """
         args = list(args or [])
         search_fnames = self._rec_names_search or ([self._rec_name] if self._rec_name else [])
+
         if not search_fnames:
             _logger.warning("Cannot execute name_search, no _rec_name or _rec_names_search defined on %s", self._name)
+
         # optimize out the default criterion of ``like ''`` that matches everything
         elif not (name == '' and operator in ('like', 'ilike')):
             aggregator = expression.AND if operator in expression.NEGATIVE_TERM_OPERATORS else expression.OR
-            domain = aggregator([[(field_name, operator, name)] for field_name in search_fnames])
-            args += domain
+            domains = []
+            for field_name in search_fnames:
+                # field_name may be a sequence of field names (partner_id.name)
+                # retrieve the last field in the sequence
+                model = self
+                for fname in field_name.split('.'):
+                    field = model._fields[fname]
+                    model = self.env.get(field.comodel_name)
+                if field.relational:
+                    # relational fields will trigger a _name_search on their comodel
+                    domains.append([(field_name, operator, name)])
+                    continue
+                try:
+                    domains.append([(field_name, operator, field.convert_to_write(name, self))])
+                except ValueError:
+                    pass  # ignore that case if the value doesn't match the field type
+            args += aggregator(domains)
+
         return self._search(args, limit=limit, access_rights_uid=name_get_uid)
 
     @api.model
@@ -2741,7 +2759,7 @@ class BaseModel(metaclass=MetaModel):
         # registry classes; the purpose of this attribute is to behave as a
         # cache of [c for c in cls.mro() if not is_registry_class(c))], which
         # is heavily used in function fields.resolve_mro()
-        cls._model_classes = tuple(c for c in cls.mro() if getattr(c, 'pool', None) is None)
+        cls._model_classes__ = tuple(c for c in cls.mro() if getattr(c, 'pool', None) is None)
 
         # 1. determine the proper fields of the model: the fields defined on the
         # class and magic fields, not the inherited or custom ones
@@ -2754,7 +2772,7 @@ class BaseModel(metaclass=MetaModel):
 
         # collect the definitions of each field (base definition + overrides)
         definitions = defaultdict(list)
-        for klass in reversed(cls._model_classes):
+        for klass in reversed(cls._model_classes__):
             # this condition is an optimization of is_definition_class(klass)
             if isinstance(klass, MetaModel):
                 for field in klass._field_definitions:
@@ -4405,7 +4423,7 @@ class BaseModel(metaclass=MetaModel):
             existing_modules = self.env['ir.module.module'].sudo().search([]).mapped('name')
             for data in to_create:
                 xml_id = data.get('xml_id')
-                if xml_id:
+                if xml_id and not data.get('noupdate'):
                     module_name, sep, record_id = xml_id.partition('.')
                     if sep and module_name in existing_modules:
                         raise UserError(

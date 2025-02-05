@@ -13,7 +13,7 @@ import re
 
 from odoo import api, fields, models, tools, _
 from odoo.tools import float_is_zero, float_round, float_repr, float_compare
-from odoo.exceptions import ValidationError, UserError
+from odoo.exceptions import ValidationError, UserError, AccessError
 from odoo.osv.expression import AND
 import base64
 
@@ -146,7 +146,7 @@ class PosOrder(models.Model):
                 # do not hide transactional errors, the order(s) won't be saved!
                 raise
             except Exception as e:
-                _logger.error('Could not fully process the POS Order: %s', tools.ustr(e))
+                _logger.error('Could not fully process the POS Order: %s', tools.ustr(e), exc_info=True)
             pos_order._create_order_picking()
             pos_order._compute_total_cost_in_real_time()
 
@@ -1104,7 +1104,7 @@ class PosOrder(models.Model):
             'lines': [[0, 0, line] for line in order.lines.export_for_ui()],
             'statement_ids': [[0, 0, payment] for payment in order.payment_ids.export_for_ui()],
             'name': order.pos_reference,
-            'uid': re.search('([0-9-]){14}', order.pos_reference).group(0),
+            'uid': re.search('([0-9-]){14,}', order.pos_reference).group(0),
             'amount_paid': order.amount_paid,
             'amount_total': order.amount_total,
             'amount_tax': order.amount_tax,
@@ -1143,7 +1143,14 @@ class PosOrder(models.Model):
             `export_as_JSON` of models.Order. This is useful for back-and-forth communication
             between the pos frontend and backend.
         """
-        return self.mapped(self._export_for_ui) if self else []
+        results = []
+        for order in self:
+            try:
+                results.append(self._export_for_ui(order))
+            except AccessError:
+                # Skip the order in case of AccessError
+                continue
+        return results
 
 
 class PosOrderLine(models.Model):

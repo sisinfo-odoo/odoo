@@ -129,7 +129,7 @@
         <xpath expr="//span[@t-field='line.price_unit']" position="attributes">
             <attribute name="t-field"></attribute>
             <attribute name="t-out">l10n_ar_values['price_unit']</attribute>
-            <attribute name="t-options">{"widget": "monetary", "display_currency": o.currency_id}</attribute>
+            <attribute name="t-options">{"widget": "float", "display_currency": o.currency_id, "decimal_precision": "Product Price"}</attribute>
         </xpath>
         <t t-set="current_subtotal" t-value="current_subtotal + line.price_subtotal" position="attributes">
             <attribute name="t-value">current_subtotal + l10n_ar_values['price_subtotal']</attribute>
@@ -185,7 +185,9 @@
                     <!-- IDENTIFICACION (ADQUIRIENTE-LOCATARIO-PRESTARIO) -->
 
                     <!-- (14) Apellido uy Nombre: Denominicacion o Razon Soclial -->
-                    <strong>Customer: </strong><span t-field="o.partner_id.commercial_partner_id.name"/>
+                    <t t-if="o.is_sale_document(include_receipts=True)"><strong>Customer: </strong></t>
+                    <t t-else=""><strong>Supplier: </strong></t>
+                    <span t-field="o.partner_id.commercial_partner_id.name"/>
 
                     <!-- (15) Domicilio Comercial -->
                     <br/>

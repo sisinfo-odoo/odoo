@@ -9971,6 +9971,9 @@
             }
         }
         setColorScaleColor(target, color) {
+            if (!isColorValid(color)) {
+                return;
+            }
             const point = this.state.rules.colorScale[target];
             if (point) {
                 point.color = Number.parseInt(color.substr(1), 16);
@@ -10682,14 +10685,22 @@
     ChartFigure.template = "o-spreadsheet-ChartFigure";
     ChartFigure.components = { Menu };
 
+    /**
+     * Start listening to pointer events and apply the given callbacks.
+     *
+     * @returns A function to remove the listeners.
+     */
     function startDnd(onMouseMove, onMouseUp, onMouseDown = () => { }) {
-        const _onMouseUp = (ev) => {
-            onMouseUp(ev);
+        const removeListeners = () => {
             window.removeEventListener("mousedown", onMouseDown);
             window.removeEventListener("mouseup", _onMouseUp);
             window.removeEventListener("dragstart", _onDragStart);
             window.removeEventListener("mousemove", onMouseMove);
             window.removeEventListener("wheel", onMouseMove);
+        };
+        const _onMouseUp = (ev) => {
+            onMouseUp(ev);
+            removeListeners();
         };
         function _onDragStart(ev) {
             ev.preventDefault();
@@ -10699,6 +10710,7 @@
         window.addEventListener("dragstart", _onDragStart);
         window.addEventListener("mousemove", onMouseMove);
         window.addEventListener("wheel", onMouseMove);
+        return removeListeners;
     }
     /**
      * Function to be used during a mousedown event, this function allows to
@@ -11553,15 +11565,18 @@
         let currentIndex;
         let currentVal;
         let currentType;
+        const getValue = sortOrder === "desc"
+            ? (i) => getValueInData(data, rangeLength - i - 1)
+            : (i) => getValueInData(data, i);
         while (indexRight - indexLeft >= 0) {
             indexMedian = Math.floor((indexLeft + indexRight) / 2);
             currentIndex = indexMedian;
-            currentVal = getValueInData(data, currentIndex);
+            currentVal = getValue(currentIndex);
             currentType = typeof currentVal;
             // 1 - linear search to find value with the same type
             while (indexLeft < currentIndex && targetType !== currentType) {
                 currentIndex--;
-                currentVal = getValueInData(data, currentIndex);
+                currentVal = getValue(currentIndex);
                 currentType = typeof currentVal;
             }
             if (currentType !== targetType || currentVal === undefined) {
@@ -11576,8 +11591,7 @@
             else if (mode === "nextSmaller" && currentVal <= target) {
                 if (matchVal === undefined ||
                     matchVal < currentVal ||
-                    (matchVal === currentVal && sortOrder === "asc" && matchValIndex < currentIndex) ||
-                    (matchVal === currentVal && sortOrder === "desc" && matchValIndex > currentIndex)) {
+                    (matchVal === currentVal && matchValIndex < currentIndex)) {
                     matchVal = currentVal;
                     matchValIndex = currentIndex;
                 }
@@ -11585,15 +11599,13 @@
             else if (mode === "nextGreater" && currentVal >= target) {
                 if (matchVal === undefined ||
                     matchVal > currentVal ||
-                    (matchVal === currentVal && sortOrder === "asc" && matchValIndex < currentIndex) ||
-                    (matchVal === currentVal && sortOrder === "desc" && matchValIndex > currentIndex)) {
+                    (matchVal === currentVal && matchValIndex < currentIndex)) {
                     matchVal = currentVal;
                     matchValIndex = currentIndex;
                 }
             }
             // 3 - give new indexes for the Binary search
-            if ((sortOrder === "asc" && currentVal > target) ||
-                (sortOrder === "desc" && currentVal <= target)) {
+            if (currentVal > target || (mode === "strict" && currentVal === target)) {
                 indexRight = currentIndex - 1;
             }
             else {
@@ -11601,7 +11613,10 @@
             }
         }
         // note that valMinIndex could be 0
-        return matchValIndex !== undefined ? matchValIndex : -1;
+        if (matchValIndex === undefined) {
+            return -1;
+        }
+        return sortOrder === "desc" ? rangeLength - matchValIndex - 1 : matchValIndex;
     }
     /**
      * Perform a linear search and return the index of the match.
@@ -18393,13 +18408,12 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     }
     const whiteSpaceRegexp = /\s/;
     function tokenizeSpace(chars) {
-        let length = 0;
+        let spaces = "";
         while (chars[0] && chars[0].match(whiteSpaceRegexp)) {
-            length++;
-            chars.shift();
+            spaces += chars.shift();
         }
-        if (length) {
-            return { type: "SPACE", value: " ".repeat(length) };
+        if (spaces) {
+            return { type: "SPACE", value: spaces };
         }
         return null;
     }
@@ -18635,7 +18649,10 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                     return { type: "FUNCALL", value: current.value, args };
                 }
             case "INVALID_REFERENCE":
-                throw new InvalidReferenceError();
+                return {
+                    type: "REFERENCE",
+                    value: CellErrorType.InvalidReference,
+                };
             case "REFERENCE":
                 if (((_b = tokens[0]) === null || _b === void 0 ? void 0 : _b.value) === ":" && ((_c = tokens[1]) === null || _c === void 0 ? void 0 : _c.type) === "REFERENCE") {
                     tokens.shift();
@@ -20423,11 +20440,11 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
   }
 
   /* Custom css to highlight topbar composer on focus */
-  .o-topbar-toolbar .o-composer-container:focus-within {
-    border: 1px solid ${SELECTION_BORDER_COLOR};
+  .o-topbar-toolbar .o-composer-container[active] {
+    border: 1px solid ${SELECTION_BORDER_COLOR} !important;
   }
 
-  .o-topbar-toolbar .o-composer-container {
+  .o-topbar-toolbar .o-composer-container[active] {
     z-index: ${ComponentsImportance.TopBarComposer};
   }
 `;
@@ -21376,6 +21393,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 y: 0,
                 width: 0,
                 height: 0,
+                cancelDnd: undefined,
             });
         }
         setup() {
@@ -21389,11 +21407,24 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 // new rendering
                 this.render();
             });
+            owl.onWillUpdateProps(() => {
+                const sheetId = this.env.model.getters.getActiveSheetId();
+                if (this.dnd.figId && !this.env.model.getters.getFigure(sheetId, this.dnd.figId)) {
+                    if (this.dnd.cancelDnd) {
+                        this.dnd.cancelDnd();
+                    }
+                    this.dnd.figId = undefined;
+                    this.dnd.cancelDnd = undefined;
+                }
+            });
         }
         getVisibleFigures() {
             const visibleFigures = this.env.model.getters.getVisibleFigures();
             if (this.dnd.figId && !visibleFigures.some((figure) => figure.id === this.dnd.figId)) {
-                visibleFigures.push(this.env.model.getters.getFigure(this.env.model.getters.getActiveSheetId(), this.dnd.figId));
+                const draggedFigure = this.env.model.getters.getFigure(this.env.model.getters.getActiveSheetId(), this.dnd.figId);
+                if (draggedFigure) {
+                    visibleFigures.push(draggedFigure);
+                }
             }
             return visibleFigures;
         }
@@ -21506,7 +21537,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 this.dnd.figId = undefined;
                 this.env.model.dispatch("UPDATE_FIGURE", { sheetId, id: figure.id, x, y });
             };
-            startDnd(onMouseMove, onMouseUp);
+            this.dnd.cancelDnd = startDnd(onMouseMove, onMouseUp);
         }
         startResize(figure, dirX, dirY, ev) {
             ev.stopPropagation();
@@ -21560,7 +21591,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                     ...update,
                 });
             };
-            startDnd(onMouseMove, onMouseUp);
+            this.dnd.cancelDnd = startDnd(onMouseMove, onMouseUp);
         }
         getDndFigure() {
             const figure = this.getVisibleFigures().find((fig) => fig.id === this.dnd.figId);
@@ -22397,6 +22428,9 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             canvas.width = width * dpr;
             canvas.height = height * dpr;
             canvas.setAttribute("style", `width:${width}px;height:${height}px;`);
+            if (width === 0 || height === 0) {
+                return;
+            }
             // Imagine each pixel as a large square. The whole-number coordinates (0, 1, 2…)
             // are the edges of the squares. If you draw a one-unit-wide line between whole-number
             // coordinates, it will overlap opposite sides of the pixel square, and the resulting
@@ -25008,6 +25042,9 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     }
     function convertChartData(chartData) {
         var _a;
+        if (chartData.dataSets.length === 0) {
+            return undefined;
+        }
         const labelRange = (_a = chartData.dataSets[0].label) === null || _a === void 0 ? void 0 : _a.replace(/\$/g, "");
         let dataSets = chartData.dataSets.map((data) => data.range.replace(/\$/g, ""));
         // For doughnut charts, in chartJS first dataset = outer dataset, in excel first dataset = inner dataset
@@ -27479,10 +27516,34 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                     const elements = [...cmd.elements].sort((a, b) => b - a);
                     for (const group of groupConsecutive(elements)) {
                         if (cmd.dimension === "COL") {
-                            this.shiftBordersHorizontally(cmd.sheetId, group[group.length - 1] + 1, -group.length);
+                            if (group[0] >= this.getters.getNumberCols(cmd.sheetId)) {
+                                for (let row = 0; row < this.getters.getNumberRows(cmd.sheetId); row++) {
+                                    this.history.update("borders", cmd.sheetId, group[0] + 1, row, "vertical", undefined);
+                                }
+                            }
+                            if (group[group.length - 1] === 0) {
+                                for (let row = 0; row < this.getters.getNumberRows(cmd.sheetId); row++) {
+                                    this.history.update("borders", cmd.sheetId, 0, row, "vertical", undefined);
+                                }
+                            }
+                            const zone = this.getters.getColsZone(cmd.sheetId, group[group.length - 1] + 1, group[0]);
+                            this.clearInsideBorders(cmd.sheetId, [zone]);
+                            this.shiftBordersHorizontally(cmd.sheetId, group[0] + 1, -group.length);
                         }
                         else {
-                            this.shiftBordersVertically(cmd.sheetId, group[group.length - 1] + 1, -group.length);
+                            if (group[0] >= this.getters.getNumberRows(cmd.sheetId)) {
+                                for (let col = 0; col < this.getters.getNumberCols(cmd.sheetId); col++) {
+                                    this.history.update("borders", cmd.sheetId, col, group[0] + 1, "horizontal", undefined);
+                                }
+                            }
+                            if (group[group.length - 1] === 0) {
+                                for (let col = 0; col < this.getters.getNumberCols(cmd.sheetId); col++) {
+                                    this.history.update("borders", cmd.sheetId, col, 0, "horizontal", undefined);
+                                }
+                            }
+                            const zone = this.getters.getRowsZone(cmd.sheetId, group[group.length - 1] + 1, group[0]);
+                            this.clearInsideBorders(cmd.sheetId, [zone]);
+                            this.shiftBordersVertically(cmd.sheetId, group[0] + 1, -group.length);
                         }
                     }
                     break;
@@ -27778,6 +27839,18 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             }
         }
         /**
+         * Remove the borders inside of a zone
+         */
+        clearInsideBorders(sheetId, zones) {
+            for (let zone of zones) {
+                for (let row = zone.top; row <= zone.bottom; row++) {
+                    for (let col = zone.left; col <= zone.right; col++) {
+                        this.history.update("borders", sheetId, col, row, undefined);
+                    }
+                }
+            }
+        }
+        /**
          * Add a border to the existing one to a cell
          */
         addBorder(sheetId, col, row, border) {
@@ -27929,7 +28002,6 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     }
     BordersPlugin.getters = ["getCellBorder"];
 
-    const nbspRegexp = new RegExp(String.fromCharCode(160), "g");
     const LINK_STYLE = { textColor: LINK_COLOR };
     /**
      * Core Plugin
@@ -28263,13 +28335,10 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             return id;
         }
         updateCell(sheetId, col, row, after) {
-            var _a;
             const before = this.getters.getCell(sheetId, col, row);
             const hasContent = "content" in after || "formula" in after;
             // Compute the new cell properties
-            const afterContent = hasContent
-                ? ((_a = after.content) === null || _a === void 0 ? void 0 : _a.replace(nbspRegexp, "")) || ""
-                : (before === null || before === void 0 ? void 0 : before.content) || "";
+            const afterContent = (hasContent ? after.content : before === null || before === void 0 ? void 0 : before.content) || "";
             let style;
             if (after.style !== undefined) {
                 style = after.style || undefined;
@@ -34353,12 +34422,21 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         drawGrid(renderingContext, layer) {
             switch (layer) {
                 case 0 /* LAYERS.Background */:
-                    this.boxes = this.getGridBoxes();
                     this.drawBackground(renderingContext);
-                    this.drawCellBackground(renderingContext);
-                    this.drawBorders(renderingContext);
-                    this.drawTexts(renderingContext);
-                    this.drawIcon(renderingContext);
+                    for (const zone of this.getters.getAllActiveViewportsZones()) {
+                        const { ctx } = renderingContext;
+                        ctx.save();
+                        ctx.beginPath();
+                        const rect = this.getters.getVisibleRect(zone);
+                        ctx.rect(rect.x, rect.y, rect.width, rect.height);
+                        ctx.clip();
+                        this.boxes = this.getGridBoxes(zone);
+                        this.drawCellBackground(renderingContext);
+                        this.drawBorders(renderingContext);
+                        this.drawTexts(renderingContext);
+                        this.drawIcon(renderingContext);
+                        ctx.restore();
+                    }
                     this.drawFrozenPanes(renderingContext);
                     break;
                 case 7 /* LAYERS.Headers */:
@@ -34556,10 +34634,8 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             const { ctx, thinLineWidth } = renderingContext;
             const visibleCols = this.getters.getSheetViewVisibleCols();
             const left = visibleCols[0];
-            const right = visibleCols[visibleCols.length - 1];
             const visibleRows = this.getters.getSheetViewVisibleRows();
             const top = visibleRows[0];
-            const bottom = visibleRows[visibleRows.length - 1];
             const { width, height } = this.getters.getSheetViewDimensionWithHeaders();
             const selection = this.getters.getSelectedZones();
             const selectedCols = getZonesCols(selection);
@@ -34575,7 +34651,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             ctx.lineWidth = thinLineWidth;
             ctx.strokeStyle = "#333";
             // Columns headers background
-            for (let col = left; col <= right; col++) {
+            for (const col of visibleCols) {
                 const colZone = { left: col, right: col, top: 0, bottom: numberOfRows - 1 };
                 const { x, width } = this.getters.getVisibleRect(colZone);
                 const colHasFilter = this.getters.doesZonesContainFilter(sheetId, [colZone]);
@@ -34595,7 +34671,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 ctx.fillRect(x, 0, width, HEADER_HEIGHT);
             }
             // Rows headers background
-            for (let row = top; row <= bottom; row++) {
+            for (const row of visibleRows) {
                 const rowZone = { top: row, bottom: row, left: 0, right: numberOfCols - 1 };
                 const { y, height } = this.getters.getVisibleRect(rowZone);
                 const rowHasFilter = this.getters.doesZonesContainFilter(sheetId, [rowZone]);
@@ -34624,21 +34700,21 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             ctx.stroke();
             ctx.beginPath();
             // column text + separator
-            for (const i of visibleCols) {
-                const colSize = this.getters.getColSize(sheetId, i);
-                const colName = numberToLetters(i);
-                ctx.fillStyle = activeCols.has(i) ? "#fff" : TEXT_HEADER_COLOR;
-                let colStart = this.getHeaderOffset("COL", left, i);
+            for (const col of visibleCols) {
+                const colSize = this.getters.getColSize(sheetId, col);
+                const colName = numberToLetters(col);
+                ctx.fillStyle = activeCols.has(col) ? "#fff" : TEXT_HEADER_COLOR;
+                let colStart = this.getHeaderOffset("COL", left, col);
                 ctx.fillText(colName, colStart + colSize / 2, HEADER_HEIGHT / 2);
                 ctx.moveTo(colStart + colSize, 0);
                 ctx.lineTo(colStart + colSize, HEADER_HEIGHT);
             }
             // row text + separator
-            for (const i of visibleRows) {
-                const rowSize = this.getters.getRowSize(sheetId, i);
-                ctx.fillStyle = activeRows.has(i) ? "#fff" : TEXT_HEADER_COLOR;
-                let rowStart = this.getHeaderOffset("ROW", top, i);
-                ctx.fillText(String(i + 1), HEADER_WIDTH / 2, rowStart + rowSize / 2);
+            for (const row of visibleRows) {
+                const rowSize = this.getters.getRowSize(sheetId, row);
+                ctx.fillStyle = activeRows.has(row) ? "#fff" : TEXT_HEADER_COLOR;
+                let rowStart = this.getHeaderOffset("ROW", top, row);
+                ctx.fillText(String(row + 1), HEADER_WIDTH / 2, rowStart + rowSize / 2);
                 ctx.moveTo(0, rowStart + rowSize);
                 ctx.lineTo(HEADER_WIDTH, rowStart + rowSize);
             }
@@ -34723,7 +34799,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             const row = zone.top;
             const cell = this.getters.getCell(sheetId, col, row);
             const showFormula = this.getters.shouldShowFormulas();
-            const { x, y, width, height } = this.getters.getVisibleRect(zone);
+            const { x, y, width, height } = this.getters.getRect(zone);
             const box = {
                 x,
                 y,
@@ -34835,12 +34911,16 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             }
             return box;
         }
-        getGridBoxes() {
+        getGridBoxes(zone) {
             const boxes = [];
-            const visibleCols = this.getters.getSheetViewVisibleCols();
+            const visibleCols = this.getters
+                .getSheetViewVisibleCols()
+                .filter((col) => col >= zone.left && col <= zone.right);
             const left = visibleCols[0];
             const right = visibleCols[visibleCols.length - 1];
-            const visibleRows = this.getters.getSheetViewVisibleRows();
+            const visibleRows = this.getters
+                .getSheetViewVisibleRows()
+                .filter((row) => row >= zone.top && row <= zone.bottom);
             const top = visibleRows[0];
             const bottom = visibleRows[visibleRows.length - 1];
             const viewport = { left, right, top, bottom };
@@ -35370,7 +35450,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             ];
             state.paste(pasteTarget, { selectTarget: true });
             const toRemove = isBasedBefore ? cmd.elements.map((el) => el + thickness) : cmd.elements;
-            let currentIndex = cmd.base;
+            let currentIndex = isBasedBefore ? cmd.base : cmd.base + 1;
             for (const element of toRemove) {
                 const size = cmd.dimension === "COL"
                     ? this.getters.getColSize(cmd.sheetId, element)
@@ -36722,8 +36802,17 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             this.getters = getters;
             this.sheetId = sheetId;
             this.boundaries = boundaries;
-            this.viewportWidth = sizeInGrid.width;
-            this.viewportHeight = sizeInGrid.height;
+            if (sizeInGrid.width < 0 || sizeInGrid.height < 0) {
+                throw new Error("Viewport size cannot be negative");
+            }
+            this.viewportWidth = sizeInGrid.height && sizeInGrid.width;
+            this.viewportHeight = sizeInGrid.width && sizeInGrid.height;
+            this.top = boundaries.top;
+            this.bottom = boundaries.bottom;
+            this.left = boundaries.left;
+            this.right = boundaries.right;
+            this.offsetX = offsets.x;
+            this.offsetY = offsets.y;
             this.offsetScrollbarX = offsets.x;
             this.offsetScrollbarY = offsets.y;
             this.canScrollVertically = options.canScrollVertically;
@@ -36877,7 +36966,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
          * @param zone
          * @returns Computes the absolute coordinate of a given zone inside the viewport
          */
-        getRect(zone) {
+        getVisibleRect(zone) {
             const targetZone = intersection(zone, this.zone);
             if (targetZone) {
                 const x = this.getters.getColRowOffset("COL", this.zone.left, targetZone.left) +
@@ -36885,12 +36974,20 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 const y = this.getters.getColRowOffset("ROW", this.zone.top, targetZone.top) + this.offsetCorrectionY;
                 const width = Math.min(this.getters.getColRowOffset("COL", targetZone.left, targetZone.right + 1), this.viewportWidth);
                 const height = Math.min(this.getters.getColRowOffset("ROW", targetZone.top, targetZone.bottom + 1), this.viewportHeight);
-                return {
-                    x,
-                    y,
-                    width,
-                    height,
-                };
+                return { x, y, width, height };
+            }
+            else {
+                return undefined;
+            }
+        }
+        getFullRect(zone) {
+            const targetZone = intersection(zone, this.zone);
+            if (targetZone) {
+                const x = this.getters.getColRowOffset("COL", this.zone.left, zone.left) + this.offsetCorrectionX;
+                const y = this.getters.getColRowOffset("ROW", this.zone.top, zone.top) + this.offsetCorrectionY;
+                const width = this.getters.getColRowOffset("COL", zone.left, zone.right + 1);
+                const height = this.getters.getColRowOffset("ROW", zone.top, zone.bottom + 1);
+                return { x, y, width, height };
             }
             else {
                 return undefined;
@@ -36904,6 +37001,9 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         }
         // PRIVATE
         searchHeaderIndex(dimension, position, startIndex = 0, absolute = false) {
+            if (this.viewportWidth <= 0 || this.viewportHeight <= 0) {
+                return -1;
+            }
             let size = 0;
             const sheetId = this.sheetId;
             const headers = this.getters.getNumberHeaders(sheetId, dimension);
@@ -36942,7 +37042,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             this.adjustViewportZoneY();
         }
         /** Corrects the viewport's horizontal offset based on the current structure
-         *  To make sure that at least on column is visible inside the viewport.
+         *  To make sure that at least one column is visible inside the viewport.
          */
         adjustViewportOffsetX() {
             if (this.canScrollHorizontally) {
@@ -36959,7 +37059,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             this.adjustViewportZoneX();
         }
         /** Corrects the viewport's vertical offset based on the current structure
-         *  To make sure that at least on row is visible inside the viewport.
+         *  To make sure that at least one row is visible inside the viewport.
          */
         adjustViewportOffsetY() {
             if (this.canScrollVertically) {
@@ -36981,11 +37081,14 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             const sheetId = this.sheetId;
             this.left = this.searchHeaderIndex("COL", this.offsetScrollbarX, this.boundaries.left);
             this.right = Math.min(this.boundaries.right, this.searchHeaderIndex("COL", this.viewportWidth, this.left));
+            if (!this.viewportWidth) {
+                return;
+            }
             if (this.left === -1) {
                 this.left = this.boundaries.left;
             }
             if (this.right === -1) {
-                this.right = this.getters.getNumberCols(sheetId) - 1;
+                this.right = this.boundaries.right;
             }
             this.offsetX =
                 this.getters.getColDimensions(sheetId, this.left).start -
@@ -36997,11 +37100,14 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             const sheetId = this.sheetId;
             this.top = this.searchHeaderIndex("ROW", this.offsetScrollbarY, this.boundaries.top);
             this.bottom = Math.min(this.boundaries.bottom, this.searchHeaderIndex("ROW", this.viewportHeight, this.top));
+            if (!this.viewportHeight) {
+                return;
+            }
             if (this.top === -1) {
                 this.top = this.boundaries.top;
             }
             if (this.bottom === -1) {
-                this.bottom = this.getters.getNumberRows(sheetId) - 1;
+                this.bottom = this.boundaries.bottom;
             }
             this.offsetY =
                 this.getters.getRowDimensions(sheetId, this.top).start -
@@ -37153,6 +37259,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                     break;
                 case "DELETE_SHEET":
                     this.cleanViewports();
+                    this.sheetsWithDirtyViewports.delete(cmd.sheetId);
                     break;
                 case "ACTIVATE_SHEET":
                     this.setViewports();
@@ -37252,12 +37359,12 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         getSheetViewVisibleCols() {
             const sheetId = this.getters.getActiveSheetId();
             const viewports = this.getSubViewports(sheetId);
-            return [...new Set(viewports.map((v) => range(v.left, v.right + 1)).flat())].filter((col) => !this.getters.isHeaderHidden(sheetId, "COL", col));
+            return [...new Set(viewports.map((v) => range(v.left, v.right + 1)).flat())].filter((col) => col >= 0 && !this.getters.isHeaderHidden(sheetId, "COL", col));
         }
         getSheetViewVisibleRows() {
             const sheetId = this.getters.getActiveSheetId();
             const viewports = this.getSubViewports(sheetId);
-            return [...new Set(viewports.map((v) => range(v.top, v.bottom + 1)).flat())].filter((row) => !this.getters.isHeaderHidden(sheetId, "ROW", row));
+            return [...new Set(viewports.map((v) => range(v.top, v.bottom + 1)).flat())].filter((row) => row >= 0 && !this.getters.isHeaderHidden(sheetId, "ROW", row));
         }
         /**
          * Return the main viewport maximum size relative to the client size.
@@ -37280,19 +37387,19 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 maxOffsetY: Math.max(0, height - viewport.viewportHeight + 1),
             };
         }
-        getColRowOffsetInViewport(dimension, referenceIndex, index) {
-            const sheetId = this.getters.getActiveSheetId();
-            const visibleCols = this.getters.getSheetViewVisibleCols();
-            const visibleRows = this.getters.getSheetViewVisibleRows();
-            if (index < referenceIndex) {
-                return -this.getColRowOffsetInViewport(dimension, index, referenceIndex);
+        getColRowOffsetInViewport(dimension, referenceHeaderIndex, targetHeaderIndex) {
+            if (targetHeaderIndex < referenceHeaderIndex) {
+                return -this.getColRowOffsetInViewport(dimension, targetHeaderIndex, referenceHeaderIndex);
             }
+            const sheetId = this.getters.getActiveSheetId();
+            const visibleHeaders = dimension === "COL"
+                ? this.getters.getSheetViewVisibleCols()
+                : this.getters.getSheetViewVisibleRows();
+            const startIndex = visibleHeaders.findIndex((header) => referenceHeaderIndex >= header);
+            const endIndex = visibleHeaders.findIndex((header) => targetHeaderIndex <= header);
+            const relevantIndexes = visibleHeaders.slice(startIndex, endIndex);
             let offset = 0;
-            const visibleIndexes = dimension === "COL" ? visibleCols : visibleRows;
-            for (let i = referenceIndex; i < index; i++) {
-                if (!visibleIndexes.includes(i)) {
-                    continue;
-                }
+            for (const i of relevantIndexes) {
                 offset +=
                     dimension === "COL"
                         ? this.getters.getColSize(sheetId, i)
@@ -37342,7 +37449,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             }
             return { canEdgeScroll, direction, delay };
         }
-        getEdgeScrollRow(y, previousY, tartingY) {
+        getEdgeScrollRow(y, previousY, startingY) {
             let canEdgeScroll = false;
             let direction = 0;
             let delay = 0;
@@ -37363,7 +37470,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 delay = scrollDelay(y - height);
                 direction = 1;
             }
-            else if (y < offsetCorrectionY && tartingY >= offsetCorrectionY && currentOffsetY > 0) {
+            else if (y < offsetCorrectionY && startingY >= offsetCorrectionY && currentOffsetY > 0) {
                 // 2
                 canEdgeScroll = true;
                 delay = scrollDelay(offsetCorrectionY - y);
@@ -37382,22 +37489,15 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
          */
         getVisibleRect(zone) {
             const sheetId = this.getters.getActiveSheetId();
-            const viewportRects = this.getSubViewports(sheetId)
-                .map((viewport) => viewport.getRect(zone))
-                .filter(isDefined$1);
-            if (viewportRects.length === 0) {
-                return { x: 0, y: 0, width: 0, height: 0 };
-            }
-            const x = Math.min(...viewportRects.map((rect) => rect.x));
-            const y = Math.min(...viewportRects.map((rect) => rect.y));
-            const width = Math.max(...viewportRects.map((rect) => rect.x + rect.width)) - x;
-            const height = Math.max(...viewportRects.map((rect) => rect.y + rect.height)) - y;
-            return {
-                x: x + this.gridOffsetX,
-                y: y + this.gridOffsetY,
-                width,
-                height,
-            };
+            return this.mapViewportsToRect(sheetId, (viewport) => viewport.getVisibleRect(zone));
+        }
+        /**
+         * Computes the actual size and position (:Rect) of the zone on the canvas
+         * regardless of the viewport dimensions.
+         */
+        getRect(zone) {
+            const sheetId = this.getters.getActiveSheetId();
+            return this.mapViewportsToRect(sheetId, (viewport) => viewport.getFullRect(zone));
         }
         /**
          * Returns the position of the MainViewport relatively to the start of the grid (without headers)
@@ -37410,6 +37510,10 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             const x = this.getters.getColDimensions(sheetId, xSplit).start;
             const y = this.getters.getRowDimensions(sheetId, ySplit).start;
             return { x, y };
+        }
+        getAllActiveViewportsZones() {
+            const sheetId = this.getters.getActiveSheetId();
+            return this.getSubViewports(sheetId);
         }
         // ---------------------------------------------------------------------------
         // Private
@@ -37462,12 +37566,11 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         }
         /** gets rid of deprecated sheetIds */
         cleanViewports() {
-            const sheetIds = this.getters.getSheetIds();
-            for (let sheetId of Object.keys(this.viewports)) {
-                if (!sheetIds.includes(sheetId)) {
-                    delete this.viewports[sheetId];
-                }
+            const newViewport = {};
+            for (const sheetId of this.getters.getSheetIds()) {
+                newViewport[sheetId] = this.viewports[sheetId];
             }
+            this.viewports = newViewport;
         }
         resetSheetViews() {
             this.cleanViewports();
@@ -37488,14 +37591,14 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             this.recomputeViewports();
         }
         recomputeViewports() {
-            for (let sheetId of Object.keys(this.viewports)) {
+            for (const sheetId of this.getters.getSheetIds()) {
                 this.resetViewports(sheetId);
             }
         }
         setSheetViewOffset(offsetX, offsetY) {
             const sheetId = this.getters.getActiveSheetId();
             const { maxOffsetX, maxOffsetY } = this.getMaximumSheetOffset();
-            Object.values(this.getSubViewports(sheetId)).forEach((viewport) => viewport.setViewportOffset(clip(offsetX, 0, maxOffsetX), clip(offsetY, 0, maxOffsetY)));
+            this.getSubViewports(sheetId).forEach((viewport) => viewport.setViewportOffset(clip(offsetX, 0, maxOffsetX), clip(offsetY, 0, maxOffsetY)));
         }
         getViewportOffset(sheetId) {
             var _a, _b;
@@ -37505,11 +37608,16 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             };
         }
         resetViewports(sheetId) {
+            if (!this.getters.tryGetSheet(sheetId)) {
+                return;
+            }
             const { xSplit, ySplit } = this.getters.getPaneDivisions(sheetId);
             const nCols = this.getters.getNumberCols(sheetId);
             const nRows = this.getters.getNumberRows(sheetId);
-            const colOffset = this.getters.getColRowOffset("COL", 0, xSplit, sheetId);
-            const rowOffset = this.getters.getColRowOffset("ROW", 0, ySplit, sheetId);
+            const colOffset = Math.min(this.getters.getColRowOffset("COL", 0, xSplit, sheetId), this.sheetViewWidth);
+            const rowOffset = Math.min(this.getters.getColRowOffset("ROW", 0, ySplit, sheetId), this.sheetViewHeight);
+            const unfrozenWidth = Math.max(this.sheetViewWidth - colOffset, 0);
+            const unfrozenHeight = Math.max(this.sheetViewHeight - rowOffset, 0);
             const { xRatio, yRatio } = this.getFrozenSheetViewRatio(sheetId);
             const canScrollHorizontally = xRatio < 1.0;
             const canScrollVertically = yRatio < 1.0;
@@ -37520,14 +37628,14 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                     new InternalViewport(this.getters, sheetId, { left: 0, right: xSplit - 1, top: 0, bottom: ySplit - 1 }, { width: colOffset, height: rowOffset }, { canScrollHorizontally: false, canScrollVertically: false }, { x: 0, y: 0 })) ||
                     undefined,
                 topRight: (ySplit &&
-                    new InternalViewport(this.getters, sheetId, { left: xSplit, right: nCols - 1, top: 0, bottom: ySplit - 1 }, { width: this.sheetViewWidth - colOffset, height: rowOffset }, { canScrollHorizontally, canScrollVertically: false }, { x: canScrollHorizontally ? previousOffset.x : 0, y: 0 })) ||
+                    new InternalViewport(this.getters, sheetId, { left: xSplit, right: nCols - 1, top: 0, bottom: ySplit - 1 }, { width: unfrozenWidth, height: rowOffset }, { canScrollHorizontally, canScrollVertically: false }, { x: canScrollHorizontally ? previousOffset.x : 0, y: 0 })) ||
                     undefined,
                 bottomLeft: (xSplit &&
-                    new InternalViewport(this.getters, sheetId, { left: 0, right: xSplit - 1, top: ySplit, bottom: nRows - 1 }, { width: colOffset, height: this.sheetViewHeight - rowOffset }, { canScrollHorizontally: false, canScrollVertically }, { x: 0, y: canScrollVertically ? previousOffset.y : 0 })) ||
+                    new InternalViewport(this.getters, sheetId, { left: 0, right: xSplit - 1, top: ySplit, bottom: nRows - 1 }, { width: colOffset, height: unfrozenHeight }, { canScrollHorizontally: false, canScrollVertically }, { x: 0, y: canScrollVertically ? previousOffset.y : 0 })) ||
                     undefined,
                 bottomRight: new InternalViewport(this.getters, sheetId, { left: xSplit, right: nCols - 1, top: ySplit, bottom: nRows - 1 }, {
-                    width: this.sheetViewWidth - colOffset,
-                    height: this.sheetViewHeight - rowOffset,
+                    width: unfrozenWidth,
+                    height: unfrozenHeight,
                 }, { canScrollHorizontally, canScrollVertically }, {
                     x: canScrollHorizontally ? previousOffset.x : 0,
                     y: canScrollVertically ? previousOffset.y : 0,
@@ -37539,7 +37647,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
          * Adjust the viewport such that the anchor position is visible
          */
         refreshViewport(sheetId, anchorPosition) {
-            Object.values(this.getSubViewports(sheetId)).forEach((viewport) => {
+            this.getSubViewports(sheetId).forEach((viewport) => {
                 viewport.adjustViewportZone();
                 viewport.adjustPosition(anchorPosition);
             });
@@ -37590,6 +37698,32 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             const height = this.sheetViewHeight + this.gridOffsetY;
             return { xRatio: offsetCorrectionX / width, yRatio: offsetCorrectionY / height };
         }
+        mapViewportsToRect(sheetId, rectCallBack) {
+            let x = Infinity;
+            let y = Infinity;
+            let width = 0;
+            let height = 0;
+            let hasViewports = false;
+            for (const viewport of this.getSubViewports(sheetId)) {
+                const rect = rectCallBack(viewport);
+                if (rect) {
+                    hasViewports = true;
+                    x = Math.min(x, rect.x);
+                    y = Math.min(y, rect.y);
+                    width = Math.max(width, rect.x + rect.width);
+                    height = Math.max(height, rect.y + rect.height);
+                }
+            }
+            if (!hasViewports) {
+                return { x: 0, y: 0, width: 0, height: 0 };
+            }
+            return {
+                x: x + this.gridOffsetX,
+                y: y + this.gridOffsetY,
+                width: width - x,
+                height: height - y,
+            };
+        }
     }
     SheetViewPlugin.getters = [
         "getColIndex",
@@ -37610,6 +37744,8 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         "getSheetViewVisibleCols",
         "getSheetViewVisibleRows",
         "getFrozenSheetViewRatio",
+        "getAllActiveViewportsZones",
+        "getRect",
     ];
 
     class SortPlugin extends UIPlugin {
@@ -37965,14 +38101,12 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                     }
                     break;
                 case "AUTORESIZE_ROWS":
-                    for (let row of cmd.rows) {
-                        this.dispatch("RESIZE_COLUMNS_ROWS", {
-                            elements: [row],
-                            dimension: "ROW",
-                            size: null,
-                            sheetId: cmd.sheetId,
-                        });
-                    }
+                    this.dispatch("RESIZE_COLUMNS_ROWS", {
+                        elements: cmd.rows,
+                        dimension: "ROW",
+                        size: null,
+                        sheetId: cmd.sheetId,
+                    });
                     break;
             }
         }
@@ -41857,13 +41991,14 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             .filter((tk) => tk.type === "FUNCTION")
             .every((tk) => functions[tk.value.toUpperCase()].isExported);
         const type = getCellType(cell.value);
+        const exportedValue = adaptFormulaValueToExcel(cell.value);
         if (isExported) {
             const XlsxFormula = adaptFormulaToExcel(formula);
             node = escapeXml /*xml*/ `
       <f>
         ${XlsxFormula}
       </f>
-      ${escapeXml /*xml*/ `<v>${cell.value}</v>`}
+      ${escapeXml /*xml*/ `<v>${exportedValue}</v>`}
     `;
             attrs.push(["t", type]);
             return { attrs, node };
@@ -41873,10 +42008,10 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             // nothing* ,we don't export it.
             // * non-falsy value are relevant and so are 0 and FALSE, which only leaves
             // the empty string.
-            if (cell.value === "")
+            if (exportedValue === "")
                 return undefined;
             attrs.push(["t", type]);
-            node = escapeXml /*xml*/ `<v>${cell.value}</v>`;
+            node = escapeXml /*xml*/ `<v>${exportedValue}</v>`;
             return { attrs, node };
         }
     }
@@ -41911,7 +42046,13 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             ast = addMissingRequiredArgs(ast);
             return ast;
         });
+        ast = convertAstNodes(ast, "REFERENCE", (ast) => {
+            return ast.value === CellErrorType.InvalidReference ? { ...ast, value: "#REF!" } : ast;
+        });
         return ast ? astToFormula(ast) : formulaText;
+    }
+    function adaptFormulaValueToExcel(formulaValue) {
+        return formulaValue === CellErrorType.InvalidReference ? "#REF!" : formulaValue;
     }
     /**
      * Some Excel function need required args that might not be mandatory in o-spreadsheet.
@@ -43448,9 +43589,9 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     Object.defineProperty(exports, '__esModule', { value: true });
 
 
-    __info__.version = '16.0.53';
-    __info__.date = '2024-10-14T07:57:53.922Z';
-    __info__.hash = 'a9ad6d8';
+    __info__.version = '16.0.60';
+    __info__.date = '2025-02-05T07:20:03.554Z';
+    __info__.hash = 'd098699';
 
 
 })(this.o_spreadsheet = this.o_spreadsheet || {}, owl);

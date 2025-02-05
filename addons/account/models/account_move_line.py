@@ -464,6 +464,8 @@ class AccountMoveLine(models.Model):
                 product = line.product_id.with_context(lang=line.partner_id.lang)
             else:
                 product = line.product_id
+            if not product:
+                return False
 
             if product.partner_ref:
                 values.append(product.partner_ref)
@@ -473,12 +475,12 @@ class AccountMoveLine(models.Model):
             elif line.journal_id.type == 'purchase':
                 if product.description_purchase:
                     values.append(product.description_purchase)
-            return '\n'.join(values)
+            return '\n'.join(values) if values else False
 
         for line in self:
             if line.display_type == 'payment_term':
                 if not line.name or line._origin.name == line._origin.move_id.payment_reference:
-                    line.name = line.move_id.payment_reference or ''
+                    line.name = line.move_id.payment_reference or False
                 continue
             if not line.product_id or line.display_type in ('line_section', 'line_note'):
                 continue
@@ -961,7 +963,7 @@ class AccountMoveLine(models.Model):
                 include_caba_tags=line.move_id.always_tax_exigible,
                 fixed_multiplicator=sign,
             )
-            rate = line.amount_currency / line.balance if line.balance else 1
+            rate = line.amount_currency / line.balance if line.balance else line.currency_rate
             line.compute_all_tax_dirty = True
             line.compute_all_tax = {
                 frozendict({
@@ -1417,9 +1419,11 @@ class AccountMoveLine(models.Model):
         before = existing()
         yield
         after = existing()
+        protected = container.get('protected', {})
         for line in after:
             if (
                 line.display_type == 'product'
+                and 'amount_currency' not in protected.get(line, {})
                 and (not changed('amount_currency') or line not in before)
             ):
                 amount_currency = line.move_id.direction_sign * line.currency_id.round(line.price_subtotal)
@@ -1432,6 +1436,7 @@ class AccountMoveLine(models.Model):
         for line in after:
             if (
                 (changed('amount_currency') or changed('currency_rate') or changed('move_type'))
+                and 'balance' not in protected.get(line, {})
                 and (not changed('balance') or (line not in before and not line.balance))
             ):
                 balance = line.company_id.currency_id.round(line.amount_currency / line.currency_rate)
@@ -1452,6 +1457,7 @@ class AccountMoveLine(models.Model):
              self._sync_invoice(container):
             lines = super().create([self._sanitize_vals(vals) for vals in vals_list])
             container['records'] = lines
+            container['protected'] = {line: set(vals.keys()) for line, vals in zip(lines, vals_list)}
 
         for line in lines:
             if line.move_id.state == 'posted':
@@ -1507,7 +1513,7 @@ class AccountMoveLine(models.Model):
         move_container = {'records': self.move_id}
         with self.move_id._check_balanced(move_container),\
              self.move_id._sync_dynamic_lines(move_container),\
-             self._sync_invoice({'records': self}):
+             self._sync_invoice({'records': self, 'protected': {line: set(vals.keys()) for line in self}}):
             self = line_to_write
             if not self:
                 return True
@@ -1874,7 +1880,7 @@ class AccountMoveLine(models.Model):
 
         # Computation of the partial exchange difference. You can skip this part using the
         # `no_exchange_difference` context key (when reconciling an exchange difference for example).
-        if not self._context.get('no_exchange_difference'):
+        if not self._context.get('no_exchange_difference') and not self._context.get('no_exchange_difference_no_recursive'):
             exchange_lines_to_fix = self.env['account.move.line']
             amounts_list = []
             if recon_currency == company_currency:
@@ -2430,7 +2436,11 @@ class AccountMoveLine(models.Model):
         # ==== Create partials ====
 
         partial_no_exch_diff = bool(self.env['ir.config_parameter'].sudo().get_param('account.disable_partial_exchange_diff'))
-        sorted_lines_ctx = sorted_lines.with_context(no_exchange_difference=self._context.get('no_exchange_difference') or partial_no_exch_diff)
+        partial_no_exch_diff_no_recursive = self._context.get('no_exchange_difference_no_recursive', False)
+        sorted_lines_ctx = sorted_lines.with_context(
+            no_exchange_difference_no_recursive=partial_no_exch_diff_no_recursive,  # Don't propagate it recursively
+            no_exchange_difference=self._context.get('no_exchange_difference') or partial_no_exch_diff,
+        )
         partials = sorted_lines_ctx._create_reconciliation_partials()
         results['partials'] = partials
         involved_partials += partials
@@ -2444,7 +2454,7 @@ class AccountMoveLine(models.Model):
 
         is_cash_basis_needed = account.company_id.tax_exigibility and account.account_type in ('asset_receivable', 'liability_payable')
         if is_cash_basis_needed and not self._context.get('move_reverse_cancel') and not self._context.get('no_cash_basis'):
-            tax_cash_basis_moves = partials._create_tax_cash_basis_moves()
+            tax_cash_basis_moves = partials.with_context(no_exchange_difference_no_recursive=False)._create_tax_cash_basis_moves()
             results['tax_cash_basis_moves'] = tax_cash_basis_moves
 
         # ==== Check if a full reconcile is needed ====
@@ -2491,7 +2501,7 @@ class AccountMoveLine(models.Model):
                 # Exchange difference for cash basis entries.
                 # If we are fully reversing the entry, no need to fix anything since the journal entry
                 # is exactly the mirror of the source journal entry.
-                if is_cash_basis_needed and not self._context.get('move_reverse_cancel'):
+                if is_cash_basis_needed and not self._context.get('move_reverse_cancel') and not self._context.get('no_cash_basis'):
                     caba_lines_to_reconcile = involved_lines._add_exchange_difference_cash_basis_vals(exchange_diff_vals)
 
                 # Create the exchange difference.

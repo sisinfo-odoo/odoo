@@ -1419,6 +1419,13 @@ msgid "Number of messages with delivery error"
 msgstr "Número de mensajes con error de envío"
 
 #. module: hr_expense
+#. odoo-javascript
+#: code:addons/hr_expense/static/src/components/expense_dashboard.xml:0
+#, python-format
+msgid "Numbers computed from your personal expenses."
+msgstr "Números calculados a partir de sus gastos personales."
+
+#. module: hr_expense
 #: model_terms:ir.ui.view,arch_db:hr_expense.hr_expense_template_register_no_user
 msgid "Odoo"
 msgstr "Odoo"
@@ -1455,11 +1462,41 @@ msgstr ""
 #. module: hr_expense
 #. odoo-python
 #: code:addons/hr_expense/models/hr_expense.py:0
-#: code:addons/hr_expense/models/hr_expense.py:0
 #, python-format
 msgid "Only Managers and HR Officers can approve expenses"
 msgstr ""
 "Solo los responsables y personal de recursos humanos pueden aprobar gastos"
+
+#. module: hr_expense
+#. odoo-python
+#: code:addons/hr_expense/models/hr_expense.py:0
+#, python-format
+msgid "Only Managers and HR Officers can refuse expenses"
+msgstr "Solo los gerentes y encargados de RR. HH. pueden rechazar gastos"
+
+#. module: hr_expense
+#. odoo-python
+#: code:addons/hr_expense/models/hr_expense.py:0
+#: code:addons/hr_expense/models/hr_expense.py:0
+#, python-format
+msgid "Employee(s) should have a bank account set."
+msgstr "Los empleados deben tener una cuenta bancaria."
+
+#. module: hr_expense
+#. odoo-python
+#: code:addons/hr_expense/models/hr_expense.py:0
+#: code:addons/hr_expense/models/hr_expense.py:0
+#, python-format
+msgid "Go to Employee(s)"
+msgstr "Ir a los empleados"
+
+#. module: hr_expense
+#. odoo-python
+#: code:addons/hr_expense/models/hr_expense.py:0
+#: code:addons/hr_expense/models/hr_expense.py:0
+#, python-format
+msgid "Employee(s)"
+msgstr "Empleado(s)"
 
 #. module: hr_expense
 #: model_terms:ir.actions.act_window,help:hr_expense.hr_expense_actions_my_all
@@ -1514,6 +1551,14 @@ msgstr "Pagos"
 #: model_terms:product.template,description:hr_expense.expense_product_communication_product_template
 msgid "Phone bills, postage, etc."
 msgstr "Cuenta de teléfono, correo postal, etc."
+
+#. module: hr_expense
+#. odoo-python
+#: code:addons/hr_expense/models/hr_expense.py:0
+#, python-format
+msgid ""
+"Please specify an expense journal in order to generate accounting entries."
+msgstr "Especifique un diario de gastos para generar los asientos contables."
 
 #. module: hr_expense
 #. odoo-javascript
@@ -1823,6 +1868,13 @@ msgid ""
 msgstr ""
 "Tome fotos de sus recibos y deje que Odoo<br> cree automáticamente los "
 "gastos por usted."
+
+#. module: hr_expense
+#. odoo-python
+#: code:addons/hr_expense/models/hr_expense.py:0
+#, python-format
+msgid "Please specify a bank journal in order to generate accounting entries."
+msgstr "Especifique un diario bancario para generar los asientos contables."
 
 #. module: hr_expense
 #. odoo-python
@@ -2337,7 +2389,7 @@ msgstr "No puedes mezclar gastos muestra con gastos regulares"
 #: code:addons/hr_expense/models/hr_expense.py:0
 #, python-format
 msgid "You cannot add expenses of another employee."
-msgstr "No puede agregar gastos de otro empleado."
+msgstr "No puede añadir gastos de otro empleado."
 
 #. module: hr_expense
 #. odoo-python
@@ -2426,7 +2478,7 @@ msgstr "No tiene gastos a informar"
 #: code:addons/hr_expense/models/hr_expense.py:0
 #, python-format
 msgid "You need to add a manual payment method on the journal (%s)"
-msgstr "Debe agregar un método de pago manual en el diario (%s)"
+msgstr "Debe añadir un método de pago manual en el diario (%s)"
 
 #. module: hr_expense
 #. odoo-python

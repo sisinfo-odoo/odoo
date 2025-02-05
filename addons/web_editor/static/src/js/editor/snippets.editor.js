@@ -1,6 +1,6 @@
 odoo.define('web_editor.snippet.editor', function (require) {
 'use strict';
-
+const { isVisible } = require("@web/core/utils/ui");
 var concurrency = require('web.concurrency');
 var core = require('web.core');
 var Dialog = require('web.Dialog');
@@ -418,9 +418,12 @@ var SnippetEditor = Widget.extend({
     /**
      * DOMElements have a default name which appears in the overlay when they
      * are being edited. This method retrieves this name; it can be defined
-     * directly in the DOM thanks to the `data-name` attribute.
+     * directly in the DOM thanks to the `data-translated-name` or `data-name` attribute.
      */
     getName: function () {
+        if (this.$target.data('translated-name') !== undefined) {
+            return this.$target.data('translated-name');
+        }
         if (this.$target.data('name') !== undefined) {
             return this.$target.data('name');
         }
@@ -499,11 +502,11 @@ var SnippetEditor = Widget.extend({
         // unit tested.
         let parent = this.$target[0].parentElement;
         let nextSibling = this.$target[0].nextElementSibling;
-        while (nextSibling && nextSibling.matches('.o_snippet_invisible')) {
+        while (nextSibling && !isVisible(nextSibling)) {
             nextSibling = nextSibling.nextElementSibling;
         }
         let previousSibling = this.$target[0].previousElementSibling;
-        while (previousSibling && previousSibling.matches('.o_snippet_invisible')) {
+        while (previousSibling && !isVisible(previousSibling)) {
             previousSibling = previousSibling.previousElementSibling;
         }
         if ($(parent).is('.o_editable:not(body)')) {
@@ -549,11 +552,19 @@ var SnippetEditor = Widget.extend({
         if ($parent.closest(':data("snippet-editor")').length) {
             const isEmptyAndRemovable = ($el, editor) => {
                 editor = editor || $el.data('snippet-editor');
-                const isEmpty = $el.text().trim() === ''
+
+                // Consider a <figure> element as empty if it only contains a
+                // <figcaption> element (e.g., when its image has just been
+                // removed).
+                const isEmptyFigureEl = $el[0].matches("figure")
+                    && $el[0].children.length === 1
+                    && $el[0].children[0].matches("figcaption");
+
+                const isEmpty = isEmptyFigureEl || ($el.text().trim() === ''
                     && $el.children().toArray().every(el => {
                         // Consider layout-only elements (like bg-shapes) as empty
                         return el.matches(this.layoutElementsSelector);
-                    });
+                    }));
                 return isEmpty && !$el.hasClass('oe_structure')
                     && !$el.parent().hasClass('carousel-item')
                     && (!editor || editor.isTargetParentEditable)
@@ -2900,6 +2911,13 @@ var SnippetsMenu = Widget.extend({
         exclude += `${exclude && ', '}.o_snippet_not_selectable`;
 
         let filterFunc = function () {
+            if (forDrop) {
+                // Prevents blocks from being dropped into an image field.
+                const selfOrParentEl = isChildren ? this.parentNode : this;
+                if (selfOrParentEl.closest("[data-oe-type=image]")) {
+                    return false;
+                }
+            }
             // Exclude what it is asked to exclude.
             if ($(this).is(exclude)) {
                 return false;

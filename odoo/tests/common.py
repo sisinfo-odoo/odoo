@@ -905,6 +905,19 @@ class ChromeBrowser:
         self._websocket_send('Runtime.enable')
         self._logger.info('Chrome headless enable page notifications')
         self._websocket_send('Page.enable')
+        self._websocket_send('Page.setDownloadBehavior', params={
+            'behavior': 'deny',
+            'eventsEnabled': False,
+        })
+        self._websocket_send('Emulation.setFocusEmulationEnabled', params={'enabled': True})
+        emulated_device = {
+            'mobile': False,
+            'width': None,
+            'height': None,
+            'deviceScaleFactor': 1,
+        }
+        emulated_device['width'], emulated_device['height'] = [int(size) for size in self.window_size.split(",")]
+        self._websocket_request('Emulation.setDeviceMetricsOverride', params=emulated_device)
         if os.name == 'posix':
             self.sigxcpu_handler = signal.getsignal(signal.SIGXCPU)
             signal.signal(signal.SIGXCPU, self.signal_handler)
@@ -1012,7 +1025,6 @@ class ChromeBrowser:
             '--disable-translate': '',
             # required for tours that use Youtube autoplay conditions (namely website_slides' "course_tour")
             '--autoplay-policy': 'no-user-gesture-required',
-            '--window-size': self.window_size,
             '--remote-debugging-address': HOST,
             '--remote-debugging-port': str(self.remote_debugging_port),
             '--no-sandbox': '',
@@ -1335,9 +1347,13 @@ which leads to stray network requests and inconsistencies."""
 
     def take_screenshot(self, prefix='sc_', suffix=None):
         def handler(f):
-            base_png = f.result(timeout=0)['data']
+            try:
+                base_png = f.result(timeout=0)['data']
+            except Exception as e:
+                self._logger.runbot("Couldn't capture screenshot: %s", e)
+                return
             if not base_png:
-                self._logger.warning("Couldn't capture screenshot: expected image data, got ?? error ??")
+                self._logger.runbot("Couldn't capture screenshot: expected image data, got %r", base_png)
                 return
 
             decoded = base64.b64decode(base_png, validate=True)

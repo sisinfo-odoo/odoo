@@ -13,6 +13,7 @@ from textwrap import shorten
 from odoo import api, fields, models, _, Command
 from odoo.addons.account.tools import format_rf_reference
 from odoo.exceptions import UserError, ValidationError, AccessError, RedirectWarning
+from odoo.tools.misc import clean_context
 from odoo.tools import (
     date_utils,
     email_re,
@@ -30,7 +31,6 @@ from odoo.tools import (
     sql
 )
 
-
 MAX_HASH_VERSION = 3
 
 PAYMENT_STATE_SELECTION = [
@@ -45,9 +45,9 @@ PAYMENT_STATE_SELECTION = [
 TYPE_REVERSE_MAP = {
     'entry': 'entry',
     'out_invoice': 'out_refund',
-    'out_refund': 'entry',
+    'out_refund': 'out_invoice',
     'in_invoice': 'in_refund',
-    'in_refund': 'entry',
+    'in_refund': 'in_invoice',
     'out_receipt': 'out_refund',
     'in_receipt': 'in_refund',
 }
@@ -1312,7 +1312,7 @@ class AccountMove(models.Model):
             else:
                 move.invoice_filter_type_domain = False
 
-    @api.depends('commercial_partner_id')
+    @api.depends('commercial_partner_id', 'company_id')
     def _compute_bank_partner_id(self):
         for move in self:
             if move.is_inbound():
@@ -2141,7 +2141,7 @@ class AccountMove(models.Model):
         if to_delete:
             self.env['account.move.line'].browse(to_delete).with_context(dynamic_unlink=True).unlink()
         if to_create:
-            self.env['account.move.line'].create([
+            self.env['account.move.line'].with_context(clean_context(self.env.context)).create([
                 {**key, **values, 'display_type': line_type}
                 for key, values in to_create.items()
             ])
@@ -2921,6 +2921,9 @@ class AccountMove(models.Model):
     # BUSINESS METHODS
     # -------------------------------------------------------------------------
 
+    def _get_tax_lines_to_aggregate(self):
+        return self.line_ids.filtered(lambda x: x.display_type == 'tax')
+
     def _prepare_invoice_aggregated_taxes(self, filter_invl_to_apply=None, filter_tax_values_to_apply=None, grouping_key_generator=None):
         self.ensure_one()
 
@@ -2944,7 +2947,7 @@ class AccountMove(models.Model):
         # This difference is then distributed evenly across the 'tax_values_list' in 'to_process'
         # such that the manual and computed tax amounts match.
         # The updated tax information is later used by '_aggregate_taxes' to compute the right tax amounts (consistently on all levels).
-        tax_lines = self.line_ids.filtered(lambda x: x.display_type == 'tax')
+        tax_lines = self._get_tax_lines_to_aggregate()
         sign = -1 if self.is_inbound(include_receipts=True) else 1
 
         # Collect the tax_amount_currency/balance from tax lines.
@@ -3607,11 +3610,9 @@ class AccountMove(models.Model):
         })
 
         for invoice in to_post:
-            invoice.message_subscribe([
-                p.id
-                for p in [invoice.partner_id]
-                if p not in invoice.sudo().message_partner_ids
-            ])
+            partner_id = invoice.partner_id
+            subscribers = [partner_id.id] if partner_id and partner_id not in invoice.sudo().message_partner_ids else None
+            invoice.message_subscribe(subscribers)
 
             if (
                 invoice.is_sale_document()
@@ -4410,17 +4411,16 @@ class AccountMove(models.Model):
             force_email_company=force_email_company, force_email_lang=force_email_lang
         )
         subtitles = [render_context['record'].name]
-        if (
-            self.invoice_date_due
-            and self.is_invoice(include_receipts=True)
-            and self.payment_state not in ('in_payment', 'paid')
-        ):
-            subtitles.append(_('%(amount)s due\N{NO-BREAK SPACE}%(date)s',
-                           amount=format_amount(self.env, self.amount_total, self.currency_id, lang_code=render_context.get('lang')),
-                           date=format_date(self.env, self.invoice_date_due, date_format='short', lang_code=render_context.get('lang'))
-                          ))
-        else:
-            subtitles.append(format_amount(self.env, self.amount_total, self.currency_id, lang_code=render_context.get('lang')))
+        if self.is_invoice(include_receipts=True):
+            # Only show the amount in emails for non-miscellaneous moves. It might confuse recipients otherwise.
+            if self.invoice_date_due and self.payment_state not in ('in_payment', 'paid'):
+                subtitles.append(_(
+                    '%(amount)s due\N{NO-BREAK SPACE}%(date)s',
+                    amount=format_amount(self.env, self.amount_total, self.currency_id, lang_code=render_context.get('lang')),
+                    date=format_date(self.env, self.invoice_date_due, date_format='short', lang_code=render_context.get('lang')),
+                ))
+            else:
+                subtitles.append(format_amount(self.env, self.amount_total, self.currency_id, lang_code=render_context.get('lang')))
         render_context['subtitles'] = subtitles
         return render_context
 
