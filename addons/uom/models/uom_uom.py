@@ -208,7 +208,7 @@ class UoM(models.Model):
         new_uom = self.create(values)
         return new_uom.id, new_uom.display_name
 
-    def _compute_quantity(self, qty, to_unit, round=True, rounding_method='UP', raise_if_failure=True):
+    def _compute_quantity(self, qty, to_unit, round=True, rounding_method='UP', raise_if_failure=False):
         """ Convert the given quantity from the current UoM `self` into a given one
             :param qty: the quantity to convert
             :param to_unit: the destination UoM record (uom.uom)
