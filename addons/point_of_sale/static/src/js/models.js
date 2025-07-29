@@ -1002,7 +1002,8 @@ class PosGlobalState extends PosModel {
         }
 
         // Filter out orders that are already being synced
-        const ordersToSync = orders.filter(order => !this.syncingOrders.has(order.id));
+        // const ordersToSync = orders.filter(order => !this.syncingOrders.has(order.id));
+        const ordersToSync = orders.filter(order => order && order.id && !this.syncingOrders.has(order.id));
 
         if (!ordersToSync.length) {
             return Promise.resolve([]);
